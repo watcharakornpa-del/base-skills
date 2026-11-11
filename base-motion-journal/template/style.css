@@ -1,0 +1,78 @@
+@font-face { font-family: 'Anuphan'; font-weight: 400; src: url('fonts/Anuphan-Regular.ttf'); }
+@font-face { font-family: 'Anuphan'; font-weight: 500; src: url('fonts/Anuphan-Medium.ttf'); }
+@font-face { font-family: 'Anuphan'; font-weight: 600; src: url('fonts/Anuphan-SemiBold.ttf'); }
+@font-face { font-family: 'Anuphan'; font-weight: 700; src: url('fonts/Anuphan-Bold.ttf'); }
+/* สี CI ของ BASE: Fire Ember #ff3608 (Primary, ไล่ไป #ed780f) · Deep Navy #0d1b2a (Accent, ไล่ไป #0a2b3f)
+   ทดลอง 2 แบบ เลือกด้วยคลาสบน #root (ตั้งจาก THEME ใน gen.py)
+   navy  = การ์ดกรมท่า เส้น/ตัวหนังสือขาว เน้นด้วย Ember — แบบพิมพ์เขียวแท้ อ่านง่ายสุด
+   ember = การ์ดส้มแดง เส้นขาว ตัวหนังสือ/เน้นด้วย Navy — Primary เป็นสีหลักตรงตามป้าย CI */
+:root { --ember:#ff3608; --ember2:#ed780f; --navyci:#0d1b2a; --navy2:#0a2b3f; --line:#FFFFFF; --acc:var(--ember); }
+.theme-navy  { --card-bg: linear-gradient(160deg, var(--navy2) 0%, var(--navyci) 100%);
+  --grid-a: rgba(255,255,255,.16); --grid-b: rgba(255,255,255,.06); --frame: rgba(255,255,255,.28);
+  --navy: #FFFFFF; --navy-soft: rgba(255,255,255,.70); --card-acc: var(--ember); --ok: #FFFFFF; --hatchA: var(--ember); }
+.theme-ember { --card-bg: linear-gradient(160deg, var(--ember) 0%, var(--ember2) 100%);
+  --grid-a: rgba(255,255,255,.26); --grid-b: rgba(255,255,255,.10); --frame: rgba(255,255,255,.45);
+  --navy: var(--navyci); --navy-soft: rgba(13,27,42,.72); --card-acc: var(--navyci); --ok: var(--navyci); --hatchA: var(--navyci); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; background: #000; overflow: hidden; }
+#root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #000;
+  font-family: 'Anuphan', sans-serif; }
+
+#talk { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+
+/* ===== ปก — ชั้นเดียวกับคลิป 1 ของทีม: Black Video + Gradient Blue copy.png + ข้อความ + เส้นใต้จาก cover font.png ===== */
+#cover { position: absolute; inset: 0; }
+#cv-black { position: absolute; inset: 0; background: rgba(0,0,0,.38); }
+#cv-grad { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+#cv-t1 { position: absolute; left: 0; top: 760px; width: 1080px; text-align: center;
+  font: 700 150px/1.1 'Anuphan'; color: #fff; white-space: nowrap; }
+#cv-t2 { position: absolute; left: 0; top: 930px; width: 1080px; text-align: center;
+  font: italic 700 96px/1.2 'Anuphan'; color: var(--acc); white-space: nowrap; opacity: 0; }
+#cv-ul { position: absolute; left: 130px; top: 1062px; width: 820px; height: 42px; opacity: 0; }
+
+/* ===== ซับ — เฉพาะช่วงคนพูดเต็มจอ ===== */
+#subs { position: absolute; left: 0; top: 1290px; width: 1080px; height: 200px; }
+.sb { position: absolute; left: 60px; top: 0; width: 960px; text-align: center; opacity: 0;
+  font: 600 56px/1.25 'Anuphan'; color: #fff; text-shadow: 0 3px 10px rgba(0,0,0,.65), 0 0 2px rgba(0,0,0,.6); }
+
+/* ===== ช่วง B-roll ===== */
+#paperbg { position: absolute; left: 0; top: 0; opacity: 0; }
+.card { position: absolute; left: 95px; top: 250px; width: 890px; height: 1260px; border-radius: 56px; overflow: hidden; opacity: 0;
+  background-image:
+    linear-gradient(var(--grid-a) 2px, transparent 2px),
+    linear-gradient(90deg, var(--grid-a) 2px, transparent 2px),
+    linear-gradient(var(--grid-b) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-b) 1px, transparent 1px),
+    var(--card-bg);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px, 100% 100%;
+  background-position: -2px 18px, 18px -2px, -1px 18px, 18px -1px, 0 0;
+  box-shadow: 0 22px 50px rgba(0,0,0,.25), inset 0 0 0 3px var(--frame); }
+/* หัวข้อการ์ดถูกตัดออก → ภาพอยู่กลางพื้นที่เหนือวงกลมพอดีแล้ว (การ์ด y 0–1020) เหลือที่ให้ขยายภาพขึ้น 10%
+   ห้ามขยายเกินนี้ — ฉาก 1 ภาพกว้างเกือบเต็มการ์ด ขยายมากกว่า 1.1 จะล้นขอบซ้ายขวา · ชั้นนี้ไม่ถูก GSAP ขยับ */
+.card .stage { position: absolute; left: 0; top: 0; width: 890px; height: 1260px; transform: scale(1.1); transform-origin: 445px 500px; }
+.card .dd { position: absolute; left: 0; top: 170px; }
+
+/* เส้นสเก็ตช์: เส้นหลัก + เส้นซ้ำบาง ๆ อีกรอบ (เหมือนลากดินสอทับ) */
+.ink { fill: none; stroke: var(--line); stroke-width: 6.5; stroke-linecap: round; stroke-linejoin: round; filter: url(#rough); }
+.ink.ghost { stroke-width: 2.8; opacity: .6; filter: url(#rough2); }
+.ink.acc { stroke: var(--card-acc); stroke-width: 7.5; }
+.ink.acc.ghost { stroke-width: 3; }
+.ink.ok { stroke: var(--ok); stroke-width: 11; }
+.ink.thin { stroke-width: 4; }
+.ink.guide { stroke-width: 2; opacity: .45; filter: none; }
+.mk { stroke: none; opacity: .95; }
+.mk.y { fill: url(#hatchA); } .mk.t { fill: url(#hatchW); } .mk.c { fill: url(#hatchA); } .mk.b { fill: url(#xhatch); }
+
+.lab { position: absolute; font: 700 46px/1.15 'Anuphan'; color: var(--navy); text-align: center; white-space: nowrap; opacity: 0; }
+.lab small { display: block; margin-top: 4px; font: 600 22px 'Anuphan'; letter-spacing: 4px; color: var(--navy-soft); }
+.lab.red { color: var(--card-acc); } .lab.grn { color: var(--ok); }
+.lab.xl { font-size: 58px; }
+.dim { position: absolute; font: 700 30px 'Anuphan'; color: var(--card-acc); text-align: center; white-space: nowrap; opacity: 0; }
+.big { position: absolute; left: 0; width: 890px; text-align: center; font: 700 104px/1.1 'Anuphan'; color: var(--navy); opacity: 0; }
+.sub { position: absolute; left: 0; width: 890px; text-align: center; font: 600 26px 'Anuphan'; letter-spacing: 6px; color: var(--navy-soft); opacity: 0; }
+.mkbar { position: absolute; }
+.mkbar.t { background: var(--card-acc); }
+
+#cam { position: absolute; left: 315px; top: 1270px; width: 450px; height: 450px; border-radius: 50%; overflow: hidden;
+  border: 10px solid #fff; box-shadow: 0 14px 36px rgba(0,0,0,.30); opacity: 0; background: #000; }
+#cam video { position: absolute; left: 0; top: 0; width: 430px; height: 430px; object-fit: cover; }

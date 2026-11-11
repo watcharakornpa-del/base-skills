@@ -1,0 +1,10 @@
+# ระบบ / ขยะจากไดรฟ์
+.DS_Store
+._*
+__pycache__/
+node_modules/
+# ห้ามขึ้น git เด็ดขาด
+.env*
+*api_key*
+*.pem
+*WITH-KEY*

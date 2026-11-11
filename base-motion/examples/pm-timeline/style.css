@@ -1,0 +1,126 @@
+@font-face { font-family: 'Poppins'; font-weight: 700; src: url('fonts/Poppins-Bold.ttf'); }
+@font-face { font-family: 'Poppins'; font-weight: 900; src: url('fonts/Poppins-Black.ttf'); }
+@font-face { font-family: 'Plex Thai'; font-weight: 500; src: url('fonts/IBMPlexSansThai-Medium.ttf'); }
+@font-face { font-family: 'Plex Thai'; font-weight: 600; src: url('fonts/IBMPlexSansThai-SemiBold.ttf'); }
+@font-face { font-family: 'Plex Thai'; font-weight: 700; src: url('fonts/IBMPlexSansThai-Bold.ttf'); }
+:root { --ink:#211F20; --red:#ED4734; --paper:#F2EFE9; --grey:#a09e9f; --line:#d9d4cc; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; background: var(--ink); overflow: hidden; }
+#root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ink);
+  font-family: 'Plex Thai', 'Poppins', sans-serif; color: var(--ink); }
+
+/* วิดีโอคนพูด: เลื่อนลงให้หน้าอยู่ใต้แผง */
+#vbox { position: absolute; left: 0; top: 600px; width: 1080px; height: 1920px; transform-origin: 540px 560px; }
+#vbox video { width: 1080px; height: 1920px; display: block; }
+
+/* แผงกระดาษ */
+#panel { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden;
+  background-color: var(--paper);
+  background-image: linear-gradient(rgba(33,31,32,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(33,31,32,.06) 1px, transparent 1px);
+  background-size: 54px 54px; background-position: -1px 95px; }
+#panel::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: var(--red); }
+.hdr { position: absolute; left: 0; top: 0; width: 1080px; height: 96px; background: #000; display: flex; align-items: center; padding: 0 48px; }
+.hdr img { height: 34px; mix-blend-mode: screen; }
+.hdr .tag { margin-left: auto; font: 700 21px 'Poppins', 'Plex Thai'; letter-spacing: 5px; color: var(--grey); }
+.hdr .cnt { position: relative; width: 150px; height: 44px; margin-left: 22px; }
+.hdr .cnt span { position: absolute; right: 0; top: 0; font: 900 34px/44px 'Poppins', 'Plex Thai'; color: #fff; opacity: 0; white-space: nowrap; }
+.hdr .cnt b { color: var(--red); font-weight: 900; }
+
+/* intro เต็มจอ */
+#intro-full { position: absolute; left: 0; top: 96px; width: 1080px; height: 1824px; }
+#intro-full .k { position: absolute; left: 64px; top: 330px; font: 700 40px 'Plex Thai'; }
+#intro-full .k b { background: var(--ink); color: #fff; padding: 2px 16px; }
+#intro-full .big { position: absolute; left: 52px; font: 900 196px/0.9 'Poppins', 'Plex Thai'; letter-spacing: -6px; }
+#intro-full .b1 { top: 430px; }
+#intro-full .b2 { top: 610px; color: var(--red); }
+#intro-full .rule { position: absolute; left: 64px; top: 830px; width: 952px; height: 14px; background: var(--ink); transform-origin: left center; }
+#intro-full .q { position: absolute; left: 64px; top: 900px; font: 700 64px/1.3 'Plex Thai'; }
+#intro-full .q em { display: inline-block; }
+#intro-full .q em { font-style: normal; color: var(--red); }
+
+/* ฉาก */
+.scene { position: absolute; left: 0; top: 96px; width: 1080px; height: 704px; opacity: 0; }
+.kick { position: absolute; left: 64px; top: 40px; height: 32px; font: 700 23px/32px 'Poppins', 'Plex Thai'; letter-spacing: 6px; color: var(--red); white-space: nowrap; }
+.kick .th { font-size: 22px; line-height: 32px; }
+.ttl { position: absolute; left: 64px; top: 84px; font: 700 66px/1.15 'Plex Thai'; }
+.ttl small { display: block; font: 500 30px/1.4 'Plex Thai'; color: #5d5a5b; }
+.num { position: absolute; right: 40px; top: 6px; font: 900 250px/1 'Poppins', 'Plex Thai'; color: #e6e1d9; -webkit-text-stroke: 3px #cdc7bd; letter-spacing: -10px; }
+.lbl { position: absolute; font: 600 30px 'Plex Thai'; white-space: nowrap; }
+.mono { font-family: 'Poppins', 'Plex Thai'; font-weight: 700; letter-spacing: 3px; }
+.hatch { background: repeating-linear-gradient(-45deg, #cfcac2 0 10px, #e4e0d9 10px 20px); }
+.redhatch { background: repeating-linear-gradient(-45deg, var(--red) 0 10px, #f39a8d 10px 20px); }
+.blk { position: absolute; display: flex; align-items: center; justify-content: center; font: 700 30px 'Plex Thai'; overflow: hidden; white-space: nowrap; }
+
+/* intro (หลังหด) */
+#s0 .row { position: absolute; left: 64px; font: 600 30px 'Plex Thai'; }
+#s0 .bar { position: absolute; left: 250px; height: 72px; }
+#s0 .flag { position: absolute; left: 700px; top: 220px; width: 6px; height: 250px; background: var(--ink); }
+#s0 .flag i { position: absolute; left: 6px; top: 0; padding: 4px 14px; background: var(--ink); color: #fff; font: 700 22px 'Poppins', 'Plex Thai'; letter-spacing: 3px; font-style: normal; white-space: nowrap; }
+#s0 .six { position: absolute; left: 64px; top: 520px; display: flex; gap: 14px; }
+#s0 .six div { width: 146px; height: 110px; border: 4px solid var(--ink); background: #fff; font: 900 40px 'Poppins', 'Plex Thai'; display: flex; align-items: center; justify-content: center; }
+
+/* 1 resource */
+#s1 .bar { position: absolute; left: 270px; top: 300px; width: 746px; height: 120px; border: 5px solid var(--ink); background: #fff; }
+#s1 .bar .blk { top: 0; height: 110px; }
+#s1 svg.person { position: absolute; left: 64px; top: 270px; }
+
+/* 2 learning curve */
+#s2 svg.chart { position: absolute; left: 64px; top: 230px; }
+#s2 .task { position: absolute; left: 64px; top: 590px; height: 66px; }
+
+/* 3 approval */
+#s3 .doc { position: absolute; left: 380px; top: 236px; width: 620px; height: 430px; background: #fff; border: 4px solid var(--ink); box-shadow: 12px 12px 0 var(--ink); transform: rotate(-1.5deg); padding: 34px 40px; }
+#s3 .doc h4 { font: 700 26px 'Poppins', 'Plex Thai'; letter-spacing: 4px; }
+#s3 .doc h5 { font: 700 40px 'Plex Thai'; margin-bottom: 18px; }
+#s3 .fld { position: relative; display: flex; align-items: flex-end; height: 72px; font: 600 34px 'Plex Thai'; }
+#s3 .fld span { flex: 1; margin-left: 18px; border-bottom: 3px dotted var(--ink); height: 40px; }
+#s3 .fld svg { position: absolute; right: 6px; bottom: 4px; }
+#s3 .stamp { position: absolute; left: 640px; top: 470px; padding: 6px 22px; border: 8px solid var(--red); color: var(--red); font: 900 62px 'Poppins', 'Plex Thai'; letter-spacing: 2px; transform: rotate(-14deg); opacity: 0; background: rgba(242,239,233,.0); }
+#s3 .ppl { position: absolute; left: 64px; top: 250px; }
+#s3 .chip { position: absolute; left: 430px; top: 600px; background: var(--ink); color: #fff; font: 600 24px 'Plex Thai'; padding: 4px 16px; }
+
+/* 4 waiting */
+#s4 .box { position: absolute; top: 300px; width: 220px; height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 5px solid var(--ink); font: 700 30px 'Poppins', 'Plex Thai'; letter-spacing: 3px; }
+#s4 .vendor { left: 64px; background: #fff; }
+#s4 .us { left: 796px; background: var(--ink); color: #fff; font-family: 'Plex Thai'; letter-spacing: 0; }
+#s4 .road { position: absolute; left: 284px; top: 373px; width: 512px; border-top: 5px dashed var(--ink); }
+#s4 .parcel { position: absolute; left: 300px; top: 330px; width: 84px; height: 84px; background: var(--red); border: 4px solid var(--ink); }
+#s4 .parcel::before { content: ''; position: absolute; left: 34px; top: 0; width: 10px; height: 76px; background: rgba(255,255,255,.55); }
+#s4 .day { position: absolute; left: 380px; top: 236px; width: 320px; text-align: center; font: 700 26px 'Poppins', 'Plex Thai'; letter-spacing: 4px; }
+#s4 .day b { position: absolute; left: 0; right: 0; top: 0; opacity: 0; }
+#s4 .strip { position: absolute; left: 64px; top: 560px; width: 952px; height: 90px; }
+
+/* 5 fallacy */
+#s5 .row { position: absolute; left: 64px; font: 600 32px 'Plex Thai'; }
+#s5 .bar { position: absolute; left: 290px; height: 80px; }
+#s5 .card { position: absolute; top: 250px; width: 288px; height: 330px; background: #fff; border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); padding: 24px 22px; }
+#s5 .card .tab { position: absolute; left: -4px; top: -40px; height: 40px; padding: 0 16px; background: var(--ink); color: #fff; font: 700 20px/40px 'Poppins', 'Plex Thai'; letter-spacing: 3px; }
+#s5 .card p { font: 600 26px 'Plex Thai'; margin-top: 18px; }
+#s5 .card .mb { height: 34px; margin-top: 8px; }
+#s5 .xc { position: absolute; left: 44px; top: 200px; width: 992px; height: 420px; border: 6px solid var(--red); opacity: 0; }
+#s5 .xc i { position: absolute; left: -6px; bottom: -48px; background: var(--red); color: #fff; font: 700 24px/48px 'Poppins', 'Plex Thai'; letter-spacing: 4px; padding: 0 18px; font-style: normal; }
+#s5 .fact { position: absolute; left: 300px; top: 330px; padding: 8px 30px; background: var(--ink); color: #fff; font: 900 78px 'Poppins', 'Plex Thai'; transform: rotate(-6deg); opacity: 0; }
+#s5 .fact b { color: var(--red); }
+
+/* 6 slack */
+#s6 .axis { position: absolute; left: 64px; top: 520px; width: 952px; height: 5px; background: var(--ink); }
+#s6 .g { position: absolute; top: 400px; height: 110px; }
+#s6 .x { position: absolute; top: 380px; }
+#s6 .note { position: absolute; font: 700 30px 'Plex Thai'; white-space: nowrap; opacity: 0; }
+
+/* 7 recap */
+#s7 .it { position: absolute; width: 462px; height: 104px; display: flex; align-items: center; gap: 20px; font: 700 34px 'Plex Thai'; }
+#s7 .it .cb { position: relative; width: 62px; height: 62px; border: 5px solid var(--ink); background: #fff; flex: none; }
+#s7 .it .cb svg { position: absolute; left: -6px; top: -22px; }
+#s7 .it .n { font: 900 26px 'Poppins', 'Plex Thai'; color: var(--grey); width: 40px; }
+#s7 .band { position: absolute; left: 0; top: 590px; width: 1080px; height: 104px; background: var(--ink); color: #fff; font: 900 58px/104px 'Poppins', 'Plex Thai'; text-align: center; letter-spacing: 2px; clip-path: inset(0 100% 0 0); }
+#s7 .band b { color: var(--red); }
+
+/* ซับ */
+#capbox { position: absolute; left: 0; top: 0; width: 1080px; height: 0; }
+.cap { position: absolute; left: 50%; top: 0; transform: translateX(-50%); white-space: nowrap; background: var(--ink); color: #fff;
+  font: 700 54px/1.25 'Plex Thai'; padding: 10px 30px 14px; opacity: 0; border-left: 10px solid var(--red); }
+.cap b { color: var(--red); font-weight: 700; }
+#fade { position: absolute; inset: 0; background: #000; opacity: 0; }
+
+.th { font-family: 'Plex Thai'; letter-spacing: 0; font-weight: 700; }

@@ -1,0 +1,44 @@
+/* base-motion-blueprint · สี CI MAYTWIN: Fire Ember #ff3608 · Deep Navy #0d1b2a · กระดาษเขียนแบบ #F3F1EB
+   ตัวหนังสือในเนื้อหา (Hook · Super · ป้าย) = ลายมือ Sriracha + ฟิลเตอร์พู่กัน #mt (ผู้ใช้สั่ง: ไม่ใช้ฟอนต์ CI)
+   ซับ = Anuphan Medium บนแถบกรมท่า */
+@font-face { font-family: 'Anuphan'; font-weight: 500; src: url('fonts/Anuphan-Medium.ttf'); }
+@font-face { font-family: 'Anuphan'; font-weight: 700; src: url('fonts/Anuphan-Bold.ttf'); }
+@font-face { font-family: 'Noto'; font-weight: 900; src: url('fonts/NotoSans-Black.ttf'); }
+@font-face { font-family: 'Hand'; src: url('fonts/Sriracha-Regular.ttf'); }   /* Sriracha · Cadson Demak · SIL OFL 1.1 (fonts/Sriracha-OFL.txt) */
+:root { --ember:#ff3608; --navy:#0d1b2a; --paper:#F3F1EB; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; background: #000; overflow: hidden; }
+#root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #000; font-family: 'Anuphan', 'Noto', sans-serif; }
+
+/* กล้อง: ภาพคนพูดเต็มจอ (ตัดขนาดภาพด้วย cut()) */
+#stage { position: absolute; inset: 0; }
+#cam { position: absolute; inset: 0; }
+#cam video { position: absolute; inset: 0; width: 1080px; height: 1920px; display: block; }
+#shade { position: absolute; left: 0; top: 0; width: 1080px; height: 1100px; opacity: 0; z-index: 4;
+  background: linear-gradient(180deg, rgba(13,27,42,.78) 0%, rgba(13,27,42,.55) 45%, rgba(13,27,42,0) 100%); }
+
+/* แผ่นกระดาษเขียนแบบ + กริดจาง (ฉากวาด) */
+#sheet { position: absolute; left: 0; top: 0; width: 1080px; height: 880px; opacity: 0; z-index: 6; overflow: visible;
+  box-shadow: 0 14px 0 rgba(13,27,42,.25); }
+.paper { position: absolute; inset: 0; background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(13,27,42,.10) 2px, transparent 2px), linear-gradient(90deg, rgba(13,27,42,.10) 2px, transparent 2px),
+    linear-gradient(rgba(13,27,42,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(13,27,42,.045) 1px, transparent 1px);
+  background-size: 200px 200px, 200px 200px, 40px 40px, 40px 40px; }
+
+/* ลายมือพู่กัน */
+.gfx { position: absolute; inset: 0; }
+.row { position: absolute; left: 0; width: 1080px; display: flex; justify-content: center; z-index: 10; }
+.wo { position: absolute; white-space: nowrap; opacity: 0; z-index: 10; font-family: 'Hand', sans-serif; font-weight: 400; filter: url(#mt); }
+.row .wo { position: relative; }
+.hk1 { font-size: 125px; line-height: 1.25; text-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.hk2 { font-size: 190px; line-height: 1.2; text-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.sup { font-size: 200px; line-height: 1.25; text-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.lab { font-size: 96px; }
+.ink { position: absolute; overflow: visible; }
+
+/* ซับ: บนสุดเสมอ · บรรทัดเดียว · ตำแหน่งเดิมทุกครั้ง (y 1480 = ใต้ปากแม้ภาพถูกดันลง · พ้น UI แอป) */
+#subs { position: absolute; inset: 0; z-index: 50; pointer-events: none; }
+.sub { position: absolute; left: 0; width: 1080px; top: 1480px; display: flex; justify-content: center; opacity: 0; }
+.sub span { background: var(--navy); color: #fff; font: 500 50px/1.4 'Anuphan', sans-serif; text-align: center;
+  padding: 10px 30px 14px; border-radius: 14px; white-space: nowrap; }

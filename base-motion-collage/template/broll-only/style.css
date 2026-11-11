@@ -1,0 +1,52 @@
+/* base-motion-collage · MP Ci (ม๋ำ Maytwin) — Fire Ember #ff3608→#ed780f · Deep Navy #0d1b2a→#0a2b3f
+   ไทย = Anuphan · อังกฤษ/ตัวเลข = Noto Sans · ไฟล์นี้เรนเดอร์ "ม้วน B-roll" (ต่อกันเฉพาะช่วงที่ขึ้นภาพ) แล้ว compose.py วางทับคลิปเดิม */
+@font-face { font-family: 'Anuphan'; font-weight: 500; src: url('fonts/Anuphan-Medium.ttf'); }
+@font-face { font-family: 'Anuphan'; font-weight: 600; src: url('fonts/Anuphan-SemiBold.ttf'); }
+@font-face { font-family: 'Anuphan'; font-weight: 700; src: url('fonts/Anuphan-Bold.ttf'); }
+@font-face { font-family: 'Noto'; font-weight: 500; src: url('fonts/NotoSans-Medium.ttf'); }
+@font-face { font-family: 'Noto'; font-weight: 700; src: url('fonts/NotoSans-Bold.ttf'); }
+@font-face { font-family: 'Noto'; font-weight: 900; src: url('fonts/NotoSans-Black.ttf'); }
+:root { --ember:#ff3608; --ember2:#ed780f; --navy:#0d1b2a; --navy2:#0a2b3f; --paper:#faf7f0; --cream:#efe6d6; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; background: #efece6; overflow: hidden; }
+#root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #efece6;
+  font-family: 'Noto', 'Anuphan', sans-serif; color: var(--navy); }
+.th { font-family: 'Anuphan', sans-serif; letter-spacing: 0; }
+
+/* หนึ่งช่วง B-roll = หน้ากระดาษขยำ + การ์ดมุมมน + ชิ้น collage + หน้าคนพูดในวงกลม */
+.seg { position: absolute; inset: 0; opacity: 0; background: url('assets/crumple.png'); background-size: 1080px 1920px; }
+.card { position: absolute; left: 95px; top: 250px; width: 890px; height: 1250px; border-radius: 60px; overflow: hidden; }
+.card.navy { background: linear-gradient(160deg, var(--navy2) 0%, var(--navy) 100%); }
+.card.ember { background: linear-gradient(160deg, var(--ember) 0%, var(--ember2) 100%); }
+.card .grain { position: absolute; inset: 0; background: url('assets/grain.png'); background-size: 890px 660px; mix-blend-mode: multiply; opacity: .5; }
+.card.navy .grain { mix-blend-mode: screen; opacity: .12; }
+.face { position: absolute; left: 325px; top: 1270px; width: 430px; height: 430px; border-radius: 50%; overflow: hidden;
+  border: 10px solid #fff; background: #000; z-index: 20; }
+.face video { width: 410px; height: 410px; display: block; object-fit: cover; }
+
+/* ชิ้นกระดาษตัด (img พื้นใส + ขอบขาวจาก cutout.py) · เงาแข็ง */
+.pc { position: absolute; display: block; filter: drop-shadow(6px 10px 0 rgba(13,27,42,.35)); }
+.shadow { position: absolute; filter: drop-shadow(5px 8px 0 rgba(13,27,42,.32)); }
+.strip { position: relative; white-space: nowrap; padding: 14px 34px 20px; }
+.edge { position: absolute; left: 0; width: 100%; height: 10px; display: block; }
+.s-paper { background: var(--paper); color: var(--navy); }
+.s-navy { background: var(--navy); color: #fff; }
+.s-ember { background: var(--ember); color: #fff; }
+.s-cream { background: var(--cream); color: var(--navy); }
+.big { font: 900 110px/1.05 'Noto', 'Anuphan'; letter-spacing: -3px; }
+.mid { font: 900 72px/1.1 'Noto', 'Anuphan'; letter-spacing: -1px; }
+.sml { font: 700 40px/1.2 'Noto', 'Anuphan'; letter-spacing: 1px; }
+.thb { font: 700 88px/1.3 'Anuphan'; }
+.thm { font: 700 60px/1.3 'Anuphan'; }
+.ths { font: 600 40px/1.35 'Anuphan'; }
+.em { color: var(--ember); }
+.s-ember .em, .s-navy .em { color: #ffb08f; }
+.tape { position: absolute; width: 150px; height: 46px; background: rgba(250,247,240,.75); }
+.ink { position: absolute; overflow: visible; }
+
+/* ปก (ถ้าคลิปยังไม่มีปกเบิร์นมา): หน้าคนพูดเต็มจอ + ดำโปร่ง + ชื่อเรื่องกลางจอ */
+.cover { position: absolute; inset: 0; opacity: 0; }
+.cover video { position: absolute; inset: 0; width: 1080px; height: 1920px; display: block; }
+.cover .dark { position: absolute; inset: 0; background: rgba(13,27,42,.55); }
+.cover .t1 { position: absolute; left: 0; width: 1080px; top: 760px; text-align: center; font: 700 120px/1.2 'Anuphan', 'Noto'; color: #fff; }
+.cover .t2 { position: absolute; left: 0; width: 1080px; top: 915px; text-align: center; font: italic 700 100px/1.25 'Anuphan', 'Noto'; color: var(--ember); }

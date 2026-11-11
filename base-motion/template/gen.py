@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+"""base-motion — แผงกราฟิกบน + คนพูดล่าง · ทุกจังหวะผูกกับเวลาคำจริง (work/scribe.json → work/align.py)
+รัน: python3 gen.py   (สร้าง index.html + assets/mix.wav ใหม่ทุกครั้ง — ห้ามแก้ index.html ตรง ๆ)
+ตัวอย่างเต็ม: ~/.claude/skills/base-motion/examples/pm-timeline/gen.py"""
+import json, os, re, shutil, subprocess, sys
+HERE = os.path.dirname(os.path.abspath(__file__)); os.chdir(HERE)
+sys.path.insert(0, 'work'); from align import at, captions
+
+# ===== ตั้งค่าต่อคลิป =====
+TOTAL = 0.0            # ความยาวคลิป (วินาที) — ffprobe
+SHRINK = 0.0           # วินาทีที่แผงเต็มจอหดเป็นแผงบน (หลังประโยค hook จบ / พ้นการ์ดชื่อเรื่องในต้นฉบับ)
+P = 800                # ความสูงแผงหลังหด
+VIDEO_Y = 600          # เลื่อนวิดีโอลงกี่ px ให้หน้าอยู่ใต้แผง (แก้ใน style.css #vbox top ด้วย)
+TAG = 'PM CHECKLIST'   # ป้ายบนหัวแผง (อังกฤษ)
+N = 6                  # จำนวนข้อ → ตัวนับ 01/N
+OVERLAY = False        # True = ส่งให้ Premiere: เรนเดอร์แค่ชั้นกราฟิก+ซับ พื้นใส (ไม่มีวิดีโอ ไม่มีเสียงพูด · เสียงใน MOV = SFX ล้วน)
+# เวลาเปิดฉาก — ใช้ at('วลีที่พูด') เสมอ ห้ามใส่ตัวเลขเดา
+S = {0: 0.0}           # เช่น S[1] = at('อย่างแรกเลย')
+
+js = []; html = []; SFX = []
+def tw(s): js.append(s)
+def r(x): return round(x, 3)
+def enter(sid, t): tw(f"tl.fromTo('#s{sid}',{{opacity:0,y:70}},{{opacity:1,y:0,duration:0.45,ease:'power3.out'}},{r(t)});")
+def leave(sid, t): tw(f"tl.to('#s{sid}',{{opacity:0,y:-60,duration:0.3,ease:'power2.in'}},{r(t-0.3)});")
+def pop(sel, t, d=0.4, frm='y:30,opacity:0', to='y:0,opacity:1', ease='power3.out'):
+    tw(f"tl.fromTo('{sel}',{{{frm}}},{{{to},duration:{d},ease:'{ease}'}},{r(t)});")
+def grow(sel, t, w, d=0.6, ease='power2.out'):
+    tw(f"tl.fromTo('{sel}',{{width:0}},{{width:{w},duration:{d},ease:'{ease}'}},{r(t)});")
+def draw(sel, t, d=0.5, ease='power2.inOut'):   # path ต้องมี pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"
+    tw(f"tl.fromTo('{sel}',{{strokeDashoffset:1}},{{strokeDashoffset:0,duration:{d},ease:'{ease}'}},{r(t)});")
+def stamp(sel, t):                              # ตราประทับกระแทก + เสียงตึ้บ
+    tw(f"tl.fromTo('{sel}',{{scale:2.3,opacity:0}},{{scale:1,opacity:1,duration:0.22,ease:'power4.in'}},{r(t)});"); fx(t, 'thump')
+def fx(t, kind, vol=None):
+    v = {'swoosh': 0.30, 'click': 0.45, 'thump': 0.75, 'pen': 0.30}[kind] if vol is None else vol
+    SFX.append((r(max(0, t)), kind, v))
+def head(kick, title, sub, num):
+    kick = kick.replace('เผื่อข้อ', '<span class="th">เผื่อข้อ</span>')   # คำไทยใน .kick ต้องห่อ .th เสมอ
+    return f'''
+      <div class="num">{num}</div>
+      <div class="kick">{kick}</div>
+      <div class="ttl">{title}<small>{sub}</small></div>'''
+CHECK = lambda w=80: f'<svg width="{w}" height="{w}" viewBox="0 0 80 80"><path pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" d="M10 44 L32 64 L72 10" fill="none" stroke="#ED4734" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+
+# ===== ฉาก =====
+# hook เต็มจอ (#intro-full) → หดแผงที่ SHRINK → ฉาก #s0 … #sN
+# แต่ละข้อต้องใช้ "ภาพเปรียบ" คนละแบบ (ห้ามการ์ดหน้าตาเดียวกันซ้ำ) · ดูตาราง idea ใน SKILL.md
+html.append('''
+    <div id="intro-full">
+      <!-- hook: คำใหญ่ Poppins Black + บรรทัดไทย -->
+    </div>''')
+tw(f"tl.to('#intro-full',{{opacity:0,y:-120,duration:0.4,ease:'power2.in'}},{r(SHRINK-0.35)});")
+tw(f"tl.to('#panel',{{height:{P},duration:0.55,ease:'power3.inOut'}},{SHRINK});")
+tw("tl.set('#capbox',{y:1540},0);")
+tw(f"tl.to('#capbox',{{y:{P-46},duration:0.55,ease:'power3.inOut'}},{SHRINK});")
+fx(SHRINK, 'swoosh')
+
+# --- เขียนฉาก #s0 … #sN ตรงนี้ (html.append + enter/pop/grow/draw/stamp/fx + leave) ---
+
+# ===== ตัวนับบนหัว =====
+order = sorted(S)
+cnt = [f'00 / {N:02d}'] + [f'<b>{i:02d}</b> / {N:02d}' for i in order[1:]]
+html_cnt = ''.join(f'<span id="c{i}">{c}</span>' for i, c in enumerate(cnt))
+for i, k in enumerate(order):
+    st = SHRINK if k == 0 else S[k]
+    tw(f"tl.fromTo('#c{i}',{{y:24,opacity:0}},{{y:0,opacity:1,duration:0.3,ease:'power2.out'}},{r(st)});")
+    if i + 1 < len(order): tw(f"tl.to('#c{i}',{{y:-24,opacity:0,duration:0.25,ease:'power2.in'}},{r(S[order[i+1]]-0.05)});")
+    if k: fx(S[k] - 0.05, 'swoosh')
+
+# ===== "ตัด" ซูมหน้าสลับตอนเปลี่ยนฉาก =====
+for i, k in enumerate(order[1:], 1):
+    if OVERLAY: break   # ซูม/จัดหน้าคนพูด = ทำใน Premiere
+    tw(f"tl.set('#vbox',{{scale:{1.08 if i % 2 else 1.0}}},{r(S[k])});")
+
+# ===== ซับ (work/captions.txt แบ่งวลีเอง · *คำเน้น* = สีแดง) =====
+caps = captions(); ch = []
+for i, c in enumerate(caps):
+    txt = re.sub(r'\*(.+?)\*', r'<b>\1</b>', c['text'])
+    ch.append(f'<div class="cap" id="k{i}">{txt}</div>')
+    st = c['start']; nxt = caps[i + 1]['start'] if i + 1 < len(caps) else TOTAL
+    end = nxt if nxt - c['end'] < 0.6 else c['end'] + 0.25
+    tw(f"tl.fromTo('#k{i}',{{opacity:1,clipPath:'inset(0 100% 0 0)'}},{{clipPath:'inset(0 0% 0 0)',duration:0.14,ease:'power2.out'}},{r(st)});")
+    tw(f"tl.set('#k{i}',{{opacity:0}},{r(end)});")
+if not OVERLAY: tw(f"tl.to('#fade',{{opacity:1,duration:0.5}},{r(TOTAL-0.5)});")
+
+VBOX = f'''    <div id="vbox"><video id="talk" class="clip" data-start="0" data-duration="{TOTAL}" data-track-index="2" data-media-start="0" muted playsinline src="assets/talk.mp4"></video></div>'''
+# overlay = งานส่งจริงขึ้นซับเป็น CC แยกแทร็กแบบ YouTube ไม่ได้เบิร์นติดภาพ
+# ซับที่วาดลงไปในแผงจะลบไม่ได้แล้วไปซ้อนกับ CC จึงซ่อนทั้งกล่อง
+# ซ่อนแทนที่จะไม่สร้าง: ไทม์ไลน์ GSAP ยังอ้างถึง #k0, #k1 … ตามเดิม
+# ไม่ต้องแตะลูปสร้างซับ และโหมดปกติไม่เปลี่ยนอะไรเลย
+OVERLAY_CSS = '''html, body, #root { background: transparent !important; }
+#capbox { display: none; }'''
+doc = f'''<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080, height=1920" />
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+{open('style.css').read()}
+{OVERLAY_CSS if OVERLAY else ''}
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="{TOTAL}" data-width="1080" data-height="1920">
+{'' if OVERLAY else VBOX}
+    <div id="panel" data-layout-allow-overflow data-layout-allow-occlusion>
+      <div class="hdr"><img src="assets/base-logo.png" alt="BASE Playhouse"><div class="tag">{TAG}</div><div class="cnt">{html_cnt}</div></div>
+{''.join(html)}
+    </div>
+    <div id="capbox" data-layout-allow-overflow>{''.join(ch)}</div>
+    <audio id="voice" class="clip" data-start="0" data-duration="{TOTAL}" data-track-index="1" data-volume="1" src="assets/mix.wav"></audio>
+    <div id="fade"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {{}};
+    const tl = gsap.timeline({{ paused: true }});
+{chr(10).join('    ' + l for l in js)}
+    window.__timelines["main"] = tl;
+  </script>
+</body>
+</html>
+'''
+open('index.html', 'w').write(doc)
+
+# ===== มิกซ์: เสียงพูด + SFX (ค่าเริ่มต้นไม่มีเพลง) =====
+FF = os.environ.get('FFMPEG') or shutil.which('ffmpeg') or 'ffmpeg'
+if not os.path.exists('assets/voice.wav'):
+    subprocess.run([FF, '-nostdin', '-v', 'error', '-i', 'assets/talk.mp4', '-vn', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', '48000', '-ac', '2', '-y', 'assets/voice.wav'], check=True)
+FILES = {'swoosh': 'assets/sfx/swoosh.mp3', 'click': 'assets/sfx/click.mp3', 'thump': 'assets/sfx/thump.wav', 'pen': 'assets/sfx/pen.wav'}
+cmd = [FF, '-nostdin', '-v', 'error', '-i', 'assets/voice.wav']
+fl = [f"[0:a]{'volume=0,' if OVERLAY else ''}aformat=sample_rates=48000:channel_layouts=stereo[v]"]; labels = ['[v]']   # overlay: เสียงพูดเป็น 0 เหลือ SFX (เสียงพูดอยู่ใน Premiere แล้ว)
+for k, (tm, kind, vol) in enumerate(SFX, 1):
+    cmd += ['-i', FILES[kind]]; ms = int(tm * 1000)
+    fl.append(f'[{k}:a]volume={vol},aformat=sample_rates=48000:channel_layouts=stereo,adelay={ms}|{ms}[s{k}]'); labels.append(f'[s{k}]')
+fl.append(''.join(labels) + f'amix=inputs={len(labels)}:normalize=0:duration=first,atrim=0:{TOTAL},alimiter=limit=0.89[out]')
+cmd += ['-filter_complex', ';'.join(fl), '-map', '[out]', '-ar', '48000', '-ac', '2', '-y', 'assets/mix.wav']
+subprocess.run(cmd, check=True)
+json.dump({'scenes': S, 'total': TOTAL, 'sfx': len(SFX)}, open('work/timeline.json', 'w'), indent=1)
+print('scenes', {k: S[k] for k in sorted(S)}, '· captions', len(caps), '· tweens', len(js), '· sfx', len(SFX))
