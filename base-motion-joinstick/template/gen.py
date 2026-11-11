@@ -77,7 +77,8 @@ def out(id, t, d=0.2):
 def fill(id, t, val, d=0.8):
     tw(f"tl.to('#{id}_arc',{{strokeDashoffset:{100 - val},duration:{d},ease:'power2.out'}},{r(t)});")
 def count(id, t, v0, v1, d):
-    tw(f"tl.fromTo('#{id}_num',{{textContent:{v0}}},{{textContent:{v1},duration:{d},ease:'power1.in',snap:{{textContent:1}}}},{r(t)});")
+    # ease ต้องเท่ากับ fill() — เดิม power1.in vs power2.out ตัวเลขช้ากว่าหลอด (หลอด 70 ตัวเลขยัง 20) · ผู้ใช้ติ C2673 Draft1
+    tw(f"tl.fromTo('#{id}_num',{{textContent:{v0}}},{{textContent:{v1},duration:{d},ease:'power2.out',snap:{{textContent:1}}}},{r(t)});")
 
 # ===== 1 · Text Hook: แบบชื่อคลิปในหน้าเล่น Micro Learning (ป้ายแดง → คำขาวใหญ่ → คำแดง) =====
 def hook(t_end, words):
@@ -173,7 +174,7 @@ MS = [(at('ถ้าเราบอกแค่ว่า'), 1, 'ทำนะ ถ
       (at('แต่ถ้าคุณสามารถ') + 2.0, 4, 'ทำนะ นี่คือ<b>ตัวตนของเรา</b> ความเป็น Perfectionist ที่มีแค่เราทำได้', 1000)]
 msgs = ''.join(f'<div class="msg" id="m{n}" style="top:{y}px"><div class="who"><span class="tag{" l4" if n == 4 else ""}">LEVEL {n}</span>'
                f'{"".join(flame(26) for _ in range(n))}</div><div class="bub th">{txt}</div></div>' for t, n, txt, y in MS)
-broll(a, b, '<div class="chat-hd"><div class="back"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M15 4L7 12L15 20" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
+broll(a, b, '<div class="chat-hd">'   # ไม่ใส่ปุ่ม Back ที่ลอกจากหน้าแอป (ผู้ใช้สั่งเอาออก C2673 Draft1)
       '<div class="nm"><div class="lbl">MISSION · IGNITE</div><div class="ttl">คุยกับน้องในทีม</div></div><div class="bar" id="cbar"></div></div>' + msgs)
 tw("tl.set('#cbar',{scaleX:0},0);")
 for k, (t, n, txt, y) in enumerate(MS):
