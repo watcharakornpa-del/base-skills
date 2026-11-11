@@ -9,6 +9,8 @@ from xml.sax.saxutils import escape
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__)); os.chdir(HERE)
 sys.path.insert(0, 'work'); from align import at
+# at('วลี') = เวลา "หลังตัด" · ถ้าใช้ after= ต้องเป็นเวลาหลังตัดด้วย ห้ามเอาเวลาจาก phrases.txt (ไฟล์ดิบ) มาใส่ — เคยพลาดทั้งคลิป
+#   คำซ้ำ: ใช้วลีที่ยาวพอให้ไม่ซ้ำ (เช่น at('Doข้อที่สอง')) หรือ after=at('วลีก่อนหน้า')
 
 # ===== ตั้งค่าต่อคลิป =====
 TOTAL = 200.76
@@ -39,7 +41,26 @@ def gauge(id, x, y, w, val0=0, big=True):
             f'<path d="{arc}" fill="none" stroke="#2c2c2e" stroke-width="34" stroke-linecap="round"/>'
             f'<path id="{id}_arc" pathLength="100" stroke-dasharray="100" stroke-dashoffset="{100 - val0}" d="{arc}" '
             f'fill="none" stroke="#EA3A1F" stroke-width="34" stroke-linecap="round"/>{ticks}{mid}</svg>')
-def track(n): return '<div class="track">' + ''.join(f'<i class="{"f" if k < n else ""}"></i>' for k in range(4)) + '</div>'
+# หลอดพลัง · กราฟแท่ง · เช็กลิสต์ · การ์ด DO/DON'T (เพิ่มจาก COM-01 C5398/C5399 · ตัวอย่างใช้งานใน references/examples/)
+def track(n, tot=4): return '<div class="track">' + ''.join(f'<i class="{"f" if k < n else ""}"></i>' for k in range(tot)) + '</div>'
+def meter(id, y, lbl, name, th, low=False):
+    return (f'<div class="card mtr{" low" if low else ""}" id="{id}" style="top:{y}px"><div class="lbl">{lbl}</div>'
+            f'<div class="nm">{name}<small>{th}</small></div><div class="pc" id="{id}_pc">0</div><div class="tr"><div class="fl" id="{id}_fl"></div></div></div>')
+def mfill(id, t, v0, v1, d=0.8):
+    tw(f"tl.fromTo('#{id}_fl',{{scaleX:{v0 / 100}}},{{scaleX:{v1 / 100},duration:{d},ease:'power2.out',immediateRender:false}},{r(t)});")
+    tw(f"tl.fromTo('#{id}_pc',{{textContent:{v0}}},{{textContent:{v1},duration:{d},ease:'power2.out',snap:{{textContent:1}},immediateRender:false}},{r(t)});")
+def mset0(*ids):
+    for id in ids: tw(f"tl.set('#{id}_fl',{{scaleX:0}},0);")
+def bar(id, x, h, v, c, goal=False):
+    return f'<div class="bar{" goal" if goal else ""}" id="{id}" style="left:{x}px;height:{h}px"><div class="v">{v}</div><div class="c">{c}</div></div>'
+def grow(id, t, s='click'):
+    tw(f"tl.fromTo('#{id}',{{opacity:0,scaleY:0}},{{opacity:1,scaleY:1,duration:0.5,ease:'power3.out'}},{r(t)});")
+    if s: fx(t, s)
+CHK = '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M5 12.5L10 17L19 7" fill="none" stroke="#000" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+CRS = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M6 6L18 18M18 6L6 18" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/></svg>'
+def lvcard(id, a, b, lbl, name, desc, n, tot, cls=''):
+    html.append(f'<div class="lv {cls}" id="{id}"><div class="lbl">{lbl}</div>{track(n, tot)}<div class="ttl-en th">{name}</div><div class="sub-t th">{desc}</div></div>')
+    slide(id, a, dy=120); tw(f"tl.to('#{id}',{{opacity:0,y:60,duration:0.2,ease:'power2.in'}},{r(b - 0.2)});")
 
 # ---------- ท่าขยับ ----------
 def pop(id, t, s='click', d=0.28, dy=40):
@@ -195,7 +216,7 @@ for i, (s_, e_, txt) in enumerate(caps):
             if s_ >= h0: s_ = max(s_, h1)
             else: e_ = min(e_, h0)
     if e_ - s_ < 0.3: continue
-    ch.append(f'<div class="sub" id="sb{i}">{escape(txt)}</div>')
+    ch.append(f'<div class="sub{" sm" if len(txt) > 30 else ""}" id="sb{i}">{escape(txt)}</div>')   # บรรทัดยาวเกิน 30 ตัว → ย่อ ไม่ให้ชนขอบจอ
     tw(f"tl.fromTo('#sb{i}',{{opacity:0}},{{opacity:1,duration:0.01}},{r(s_)});"); tw(f"tl.set('#sb{i}',{{opacity:0}},{r(e_)});")
 tw(f"tl.to('#fade',{{opacity:1,duration:0.5}},{r(TOTAL - 0.5)});")
 

@@ -4,7 +4,9 @@
   python work/rough.py table            → work/phrases.txt  ตารางวลี (id · เวลา · ช่วงเงียบก่อนหน้า · ข้อความ) ให้ Claude อ่านหาเทคเสีย
                                           + ติดธง F (คำเกินที่น่าตัด) ให้อัตโนมัติ
   (Claude เขียน work/cuts.json แล้วให้ผู้ใช้ดูรายการก่อน)
-  python work/rough.py build            → renders/preview.mp4 (ดูเร็ว แนวตั้ง) · renders/roughcut.xml (import เข้า Premiere)
+  python work/rough.py build            → renders/roughcut.xml (import เข้า Premiere) · ใส่ --preview ถ้าอยากได้ renders/preview.mp4 ฝังซับ
+                                          (ค่าเริ่มต้นข้ามพรีวิว: base-motion-joinstick ได้ MP4 พร้อมกราฟิกอยู่แล้ว · ประหยัด ~1–2 นาที)
+  python work/rough.py full             → renders/cut_1080.mp4 (แท็กสี Rec.709 + keyframe ทุก 30 เฟรม พร้อมใช้เป็น talk.mp4)
                                           · renders/roughcut.srt (ซับตามเวลาหลังตัด) · work/edit_report.txt
 cuts.json: {"remove": [[id_จาก, id_ถึง, "เหตุผล"], ...], "keep_fillers": [id, ...], "start": id_แรก, "end": id_สุดท้าย}
 ตั้งค่าหลักอยู่ใน CFG ด้านล่าง (ปรับผ่าน work/cuts.json ช่อง "cfg" ได้)"""
@@ -24,6 +26,7 @@ CFG = dict(
 FILLERS = {'เอ่อ', 'เออ', 'อ่า', 'อา', 'อืม', 'อือ', 'เอิ่ม', 'อ้า', 'แบบ', 'แบบว่า', 'คือ', 'อ๋อ', 'เอ้อ', 'อะ'}
 norm = lambda s: re.sub(r'\s+', '', s)
 FF = shutil.which('ffmpeg') or 'ffmpeg'
+PREVIEW = '--preview' in sys.argv
 
 def phrases():
     W = json.load(open('work/scribe.json', encoding='utf-8'))['words']
@@ -120,6 +123,12 @@ def build(keep_only=False):
     open('work/edit_report.txt', 'w', encoding='utf-8').write('\n'.join(report)); print('\n'.join(report[:1]))
     json.dump([[round(s, 3), round(e, 3)] for s, e, *_ in R], open('work/keep.json', 'w', encoding='utf-8'))
     if keep_only: return R          # full() ขอแค่ช่วงที่เก็บ ไม่ต้องทำซับ/XML/พรีวิว
+    # concat ปัดภาพแต่ละช่วงขึ้นเป็นเฟรมเต็มของไฟล์ดิบ แล้วเลื่อนเสียงช่วงถัดไปตาม → เวลาซับต้องใช้ความยาวที่ปัดแล้ว
+    # (เดิมใช้ e - s ตรง ๆ ซับเพี้ยนสะสม ~0.1% · C5399 ท้ายคลิปช้าไป 0.16 วิ)
+    import math
+    _n, _d = map(int, json.loads(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'json', src],
+                                                capture_output=True, text=True).stdout)['streams'][0]['r_frame_rate'].split('/')); fr = _n / _d
+    seglen = lambda s, e: max(e - s, (math.ceil(e * fr - 1e-6) - math.ceil(s * fr - 1e-6)) / fr)
 
     # ---- ซับตามเวลาหลังตัด: แตกวลียาวด้วยตัดคำไทย (pythainlp) แล้วรวมให้ได้ ~cap_chars ตัวอักษร ----
     def chunks(p):
@@ -153,7 +162,7 @@ def build(keep_only=False):
                 last_c['text'] += ' ' + p['text']; last_c['end'] = ne
             else:
                 caps.append({'text': p['text'], 'start': ns, 'end': ne})
-        t0 += e - s
+        t0 += seglen(s, e)
     merged = []                    # บรรทัดสั้นกุด (เช่น "Case" / "รวดเร็ว") รวมกับบรรทัดก่อนหน้า ถ้ารวมแล้วไม่เกิน 36 ตัว
     for c in caps:
         if merged and len(norm(c['text'])) <= 7 and len(norm(merged[-1]['text'] + c['text'])) <= 36 and c['start'] - merged[-1]['end'] < 0.35:
@@ -191,10 +200,10 @@ def build(keep_only=False):
     # ffmpeg บน Mac ไม่มี zscale → ใช้ LUT จาก work/hlg2sdr_lut.py
     tone = ('scale=in_color_matrix=bt2020:in_range=tv,format=rgb48le,lut3d=assets/hlg2sdr.cube,'
             'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p,setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709,') if hdr else ''
-    os.makedirs('work/subprev/assets', exist_ok=True)
-    cut_video(src, [(s, e) for s, e, *_ in R], f'{tone}scale=-2:960,crop=540:960', 'work/subprev/assets/cut.mp4', ['-preset', 'veryfast', '-crf', '23'])
+    if PREVIEW: os.makedirs('work/subprev/assets', exist_ok=True)
+    if PREVIEW: cut_video(src, [(s, e) for s, e, *_ in R], f'{tone}scale=-2:960,crop=540:960', 'work/subprev/assets/cut.mp4', ['-preset', 'veryfast', '-crf', '23'])
     if hdr: print('ℹ️ ไฟล์ดิบเป็น HDR (HLG/PQ) — พรีวิวแปลงเป็น Rec.709 แล้ว (ใน Premiere ภาพปกติเพราะ Pr แปลงให้เอง)')
-    preview_subs(caps, cut_len)
+    if PREVIEW: preview_subs(caps, cut_len)
 
     # ---- Premiere: FCP7 XML (ซีเควนซ์แนวตั้ง · คลิปดิบตัดเป็นชิ้น · ย่อให้เต็มความสูง) ----
     probe = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-print_format', 'json', '-show_streams', '-show_format', src], capture_output=True, text=True).stdout)
@@ -228,7 +237,7 @@ def build(keep_only=False):
            f'<track>{"".join(vitems[0])}</track></video>'
            f'<audio><numOutputChannels>2</numOutputChannels><track>{"".join(aitems[0])}</track><track>{"".join(aitems[1])}</track></audio></media></sequence></xmeml>')
     open('renders/roughcut.xml', 'w', encoding='utf-8').write(xml)
-    print(f'✅ renders/preview.mp4 · renders/roughcut.xml ({len(R)} ชิ้น · {pos / FPS:.1f} วิ · scale {scale}%) · renders/roughcut.srt ({len(caps)} บรรทัด) · work/edit_report.txt')
+    print(f'✅ {"renders/preview.mp4 · " if PREVIEW else ""}renders/roughcut.xml ({len(R)} ชิ้น · {pos / FPS:.1f} วิ · scale {scale}%) · renders/roughcut.srt ({len(caps)} บรรทัด) · work/edit_report.txt')
 
 def full():
     """ไฟล์ตัดแล้วความละเอียดเต็ม 1080×1920 (ไม่มีซับ ไม่มีปก) → renders/cut_1080.mp4
@@ -240,18 +249,23 @@ def full():
                                     capture_output=True, text=True).stdout)['streams'][0].get('color_transfer', '')
     tone = ('scale=in_color_matrix=bt2020:in_range=tv,format=rgb48le,lut3d=assets/hlg2sdr.cube,scale=out_color_matrix=bt709:out_range=tv,format=yuv420p,setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709,'
             if col in ('arib-std-b67', 'smpte2084') else '')
-    cut_video(src, R, f"{tone}scale=-2:1920,crop=1080:1920,fps={CFG['seq_fps']}", 'renders/cut_1080.mp4', ['-preset', 'medium', '-crf', '17', '-b:a', '256k'])
+    # แท็ก Rec.709 เสมอ (ไฟล์ SDR ของกล้องติดแท็ก xvYCC/HLG มา) + keyframe ทุก 30 เฟรม → setup_gfx ใช้ต่อได้เลยไม่ต้องเข้ารหัสซ้ำ
+    cut_video(src, R, f"{tone}scale=-2:1920,crop=1080:1920,setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709",
+              'renders/cut_1080.mp4', ['-preset', 'fast', '-crf', '17', '-g', '30', '-keyint_min', '30', '-movflags', '+faststart', '-b:a', '256k'], post=f"fps={CFG['seq_fps']}")
     print('✅ renders/cut_1080.mp4')
 
-def cut_video(src, R, vf, out, enc):
+def cut_video(src, R, vf, out, enc, post=''):
     """ต่อช่วง R ตาม "ลำดับในลิสต์" (trim+concat) — ห้ามใช้ select/between: มันเก็บเฟรมตามลำดับไฟล์ดิบ
     เทคแก้ที่ย้ายมาแทรกกลางจะไปโผล่ท้ายคลิป และซับเลื่อนทั้งคลิป (เจอจริงรอบแรก)"""
-    fl = []
+    # ย่อ/แปลงสี (vf) ครั้งเดียวก่อน split — เดิมส่งภาพ 4K เต็มเข้าทุกช่วง (19–24 สำเนา) ช้ากว่า 2–3 เท่า
+    # (ลอง VideoToolbox แล้ว: ถอด H.264 4:2:2 10-bit ของกล้อง Sony ไม่ได้ · CPU ถอด 20 วิได้ใน 4 วิอยู่แล้ว)
+    n = len(R)
+    fl = [f'[0:v]{vf},split={n}' + ''.join(f'[s{i}]' for i in range(n)), f'[0:a]asplit={n}' + ''.join(f'[t{i}]' for i in range(n))]
     for i, (s, e) in enumerate(R):
-        fl.append(f'[0:v]trim=start={s:.3f}:end={e:.3f},setpts=PTS-STARTPTS[v{i}]')
-        fl.append(f'[0:a]atrim=start={s:.3f}:end={e:.3f},asetpts=PTS-STARTPTS[a{i}]')
-    fl.append(''.join(f'[v{i}][a{i}]' for i in range(len(R))) + f'concat=n={len(R)}:v=1:a=1[cv][ca]')
-    fl.append(f'[cv]{vf}[ov]')
+        fl.append(f'[s{i}]trim=start={s:.3f}:end={e:.3f},setpts=PTS-STARTPTS[v{i}]')
+        fl.append(f'[t{i}]atrim=start={s:.3f}:end={e:.3f},asetpts=PTS-STARTPTS[a{i}]')
+    fl.append(''.join(f'[v{i}][a{i}]' for i in range(n)) + f'concat=n={n}:v=1:a=1[{"cv" if post else "ov"}][ca]')
+    if post: fl.append(f'[cv]{post}[ov]')   # fps ต้องอยู่หลัง concat (ใส่ก่อน trim แล้วภาพเร็วกว่าเสียง ~2 เฟรม)
     subprocess.run([FF, '-nostdin', '-v', 'error', '-i', src, '-filter_complex', ';'.join(fl), '-map', '[ov]', '-map', '[ca]',
                     '-c:v', 'libx264', *enc, '-pix_fmt', 'yuv420p', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709',
                     '-c:a', 'aac', '-y', out], check=True)

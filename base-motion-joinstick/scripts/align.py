@@ -5,7 +5,7 @@ import sys; sys.stdout.reconfigure(encoding="utf-8")
 import json, os, re
 HERE = os.path.dirname(os.path.abspath(__file__))
 W = [w for w in json.load(open(f'{HERE}/scribe.json', encoding='utf-8'))['words'] if w['type'] == 'word']
-norm = lambda s: re.sub(r'[\s*]', '', s)
+norm = lambda s: re.sub(r'[\s*]', '', s).lower()   # ไม่สนตัวเล็ก/ใหญ่: Scribe ถอดรอบละแบบ (Mindset / mindset)
 # ตัวอักษรทีละตัว → (start, end) ของ token ที่มันอยู่
 CH = []
 for w in W:

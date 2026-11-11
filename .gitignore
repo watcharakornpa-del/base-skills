@@ -10,4 +10,4 @@ node_modules/
 *WITH-KEY*
 
 # ภาพที่เห็นหน้าคนพูด/คลิปลูกค้า — ไม่ขึ้น git (ผู้ใช้สั่ง 11 พ.ย. 2026)
-base-motion-joinstick/references/example-c2673.jpg
+base-motion-joinstick/references/**/*.jpg
