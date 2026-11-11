@@ -8,6 +8,7 @@
 | `base-motion-collage` | ใส่ B-roll collage กระดาษตัด สี MP Ci · แก้ Draft1 → Draft2 ตามรีฟ |
 | `base-motion-journal` | สไตล์ TikTok: ปก → คนพูด+ซับ → การ์ดวาดเส้น + หน้าในวงกลม |
 | `base-motion-blueprint` | Hook เขียนสด + Super ลายมือพู่กัน + ฉากวาดบนกระดาษเขียนแบบ (บรีฟ MAYTWIN) |
+| `base-motion-joinstick` | ไฟล์ดิบ → คลิป Micro Learning สำหรับแอป JOINSTICK (ภาษา UI ของแอป) |
 | `base-rough-cut` | ไฟล์ดิบ → rough cut XML + ซับ SRT สำหรับ Premiere |
 
 ## ติดตั้งในเครื่องใหม่
