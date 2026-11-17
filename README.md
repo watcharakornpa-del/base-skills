@@ -12,11 +12,18 @@
 | `base-rough-cut` | ไฟล์ดิบ → rough cut XML + ซับ SRT สำหรับ Premiere |
 | `mp-sheet-caption` | แปะลิงก์ Drive คลิปที่ส่งแล้ว + แคปชั่น/แฮชแท็ก ลงชีตคอนเทนต์ (แท็บ mp_base) |
 
-## ติดตั้งในเครื่องใหม่
+## ติดตั้งในเครื่องใหม่ / อัปเดต
+**จาก GitHub** (เครื่องต้องล็อกอิน GitHub ที่ได้รับเชิญเข้า repo นี้แล้ว):
 ```bash
-git clone <ลิงก์ repo นี้> ~/.claude/skills
+curl -fsSL -H "Authorization: token $(gh auth token)" https://raw.githubusercontent.com/watcharakornpa-del/base-skills/main/install.sh | bash
 ```
-แล้วเปิด Claude Code session ใหม่
+หรือถ้ามีไฟล์ `install.sh` อยู่แล้ว: `bash install.sh` · รันซ้ำ = อัปเดต (git pull)
+
+**จาก SSD** (ไม่ต้องใช้ GitHub):
+```bash
+bash "/Volumes/Extreme SSD/AI/skills/install.sh" "/Volumes/Extreme SSD/AI/skills"
+```
+สกิลเดิมในเครื่องจะถูกย้ายไปสำรองที่ `~/Developer/skill-backups/` ไม่ลบทิ้ง · เสร็จแล้วเปิด Claude Code session ใหม่
 
 ## ไม่มีใน repo (ตั้งใจ)
 - คีย์ ElevenLabs (`~/.elevenlabs/api_key`) — ขอพี่ Mac
