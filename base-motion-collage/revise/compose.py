@@ -2,7 +2,8 @@
 """ประกอบ Draft2 → renders/<ชื่อ>.mp4 แล้วก๊อปไปที่ไฟล์ส่ง (clip.json: out)
 ภาพ: ช่วงที่ Draft1 เป็นคนพูด = ต้นฉบับ 4K (ตามจุดตัดใน rough cut XML) + LUT โทนเข้ม · ช่วง B-roll = ภาพจาก collage (ไม่เกรด)
 ทับ: แผ่นแปะป้าย (ถ้ามี) → ปก → Super → ซับ (IBM Plex Sans Thai ขนาดคงที่ + เงาฟุ้ง ไม่มีขอบ)
-เสียง: ต้นฉบับ (ช่วง B-roll ใช้เสียง collage ที่มี SFX) + ปากกา/typewriter ทีม · loudnorm 2 รอบ -15 LUFS พีค ≤ -2 dBTP
+เสียง: ต้นฉบับกล้องทั้งคลิป (ช่วง B-roll ด้วย — ห้ามใช้เสียงในไฟล์ collage) + SFX ของ B-roll (sfx.json ของโปรเจกต์ collage)
+      + ปากกา/typewriter ทีม · compressor ชั้นเดียวทั้งคลิป · loudnorm 2 รอบ -15 LUFS พีค ≤ -2 dBTP
 ใช้: python3 -I work/compose.py"""
 import json, os, shutil, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__)); P = os.path.dirname(HERE)
@@ -42,10 +43,15 @@ for s in E['segs']:
                      '-vf', f'scale=1080:1920:flags=lanczos,fps=30,trim=end_frame={N},setpts=PTS-STARTPTS,lut3d={LUT},format=yuv420p',
                      '-af', f'atrim=end={N / 30:.6f},asetpts=PTS-STARTPTS', *enc, o]); lst.append(o)
         else:
+            # ภาพจาก collage · เสียงจากกล้องช่วงเดียวกัน (แผนที่เดียวกับช่วงคนพูด -> ขอบ B-roll เสียงต่อเนื่อง ไม่ซ้ำ/ไม่แหว่ง)
             n += 1; o = f'{HERE}/pieces/p{n:03}.mkv'
-            N = round((b - a) * 30)
-            run(['-ss', f'{(round(a * 30) - 0.5) / 30:.4f}', '-i', C['collage'], '-t', f'{b - a + 0.2:.4f}', '-vf', f'fps=30,trim=end_frame={N},setpts=PTS-STARTPTS,format=yuv420p',
-                 '-af', f'atrim=end={N / 30:.6f},asetpts=PTS-STARTPTS', *enc, o]); lst.append(o)
+            N = round((b - a) * 30); sp = src_pieces(a, b)
+            ins_ = ['-ss', f'{(round(a * 30) - 0.5) / 30:.4f}', '-t', f'{b - a + 0.2:.4f}', '-i', C['collage']]
+            for ss, d in sp: ins_ += ['-ss', f'{ss:.4f}', '-t', f'{d + 0.1:.4f}', '-i', C['src']]
+            fl = [f'[0:v]fps=30,trim=end_frame={N},setpts=PTS-STARTPTS,format=yuv420p[v]']
+            fl += [f'[{k}:a:0]atrim=end={d:.6f},asetpts=PTS-STARTPTS[a{k}]' for k, (ss, d) in enumerate(sp, 1)]
+            fl.append(''.join(f'[a{k}]' for k in range(1, len(sp) + 1)) + f'concat=n={len(sp)}:v=0:a=1,apad,atrim=end={N / 30:.6f}[a]')
+            run([*ins_, '-filter_complex', ';'.join(fl), '-map', '[v]', '-map', '[a]', *enc, o]); lst.append(o)
 open(f'{HERE}/pieces/list.txt', 'w').write(''.join(f"file '{x}'\n" for x in lst))
 run(['-f', 'concat', '-safe', '0', '-i', f'{HERE}/pieces/list.txt', '-c', 'copy', f'{HERE}/base.mkv'])
 
@@ -85,6 +91,22 @@ fonts = os.path.expanduser('~/Library/Fonts')
 fv.append(f"[{prev}]ass='{HERE}/subs.ass':fontsdir='{fonts}':shaping=complex,format=yuv420p[vout]")
 ins += ['-i', f'{TEAM}/pen writing.wav', '-i', f'{TEAM}/typewriter.wav']; pen, tw = k + 1, k + 2
 fa = [f"[{pen}:a]atrim=0:1.6,afade=t=out:st=1.2:d=0.4,volume=0.45,adelay=300|300[pen]"]; mix = ['[0:a]', '[pen]']
+# SFX ของ B-roll: ระดับเทียบเสียงพูดเท่าใน collage (collage พูด -14 LUFS · ที่นี่เสียงกล้องดิบ) -> คูณส่วนต่างความดัง
+SFXF = {k_: os.path.expanduser(f'~/.claude/skills/base-motion-collage/assets/sfx/{v_}') for k_, v_ in dict(swoosh='swoosh.mp3', click='click.mp3', thump='thump.wav', pen='pen.wav').items()}
+nk = tw
+if C.get('sfx'):
+    import re as _re
+    _r = subprocess.run([FF, '-nostdin', '-hide_banner', '-i', f'{HERE}/base.mkv', '-af', 'ebur128', '-f', 'null', '-'], capture_output=True, text=True).stderr
+    rel = 10 ** ((float(_re.findall(r'I:\s+(-?[\d.]+) LUFS', _r)[-1]) + 14) / 20)
+    sfx_ins = []
+    for t_, kind, vol in json.load(open(C['sfx'], encoding='utf-8')):
+        if not any(r[0] - .05 <= t_ < r[1] for r in E['broll']): continue
+        try: tn = new_t(t_)
+        except SystemExit: continue                              # ช่วงนี้ถูกตัดออกใน Draft2
+        sfx_ins += ['-i', SFXF[kind]]; nk += 1; ms = round(tn * 1000)
+        fa.append(f"[{nk}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume={vol * rel:.4f},adelay={ms}|{ms}[sx{nk}]"); mix.append(f'[sx{nk}]')
+    ins += sfx_ins
+else: print('⚠️ ไม่มี sfx.json (clip.json: sfx) — B-roll ไม่มี SFX')
 for i, s in enumerate(E['supers'], 1):
     ms = round((s['at'] + 0.1) * 1000)
     fa.append(f"[{tw}:a]atrim=0:0.75,afade=t=out:st=0.55:d=0.2,volume=0.5,adelay={ms}|{ms}[tw{i}]"); mix.append(f'[tw{i}]')

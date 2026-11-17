@@ -2,7 +2,7 @@
 """ซีเควนซ์ Draft2 สำหรับ Premiere (FCP7 XML แบบเดียวกับ clipN-roughcut.xml) → File › Import ได้ซีเควนซ์ทันที
 จุดตัดชุดเดียวกับ compose.py (MP4) · ก๊อปกราฟิก + ซับ + LUT ลง SSD ข้างโปรเจกต์ (ทีมเปิดจากเครื่องไหนก็เจอไฟล์)
 แทร็ก: V1 กล้อง 4K (Scale 50 บน Mac) / B-roll collage · V2 แผ่นแปะป้าย · V3 ปก · V4 Super
-       A1–A2 เสียงพูด (ช่วง B-roll = เสียง collage ที่มี SFX เดิม) · A3 ปากกา + typewriter
+       A1–A2 เสียงพูดจากกล้องทั้งคลิป (ช่วง B-roll ด้วย — ไม่ใช้เสียงในไฟล์ collage) · A3 ปากกา + typewriter · A4 SFX ของ B-roll
 ไม่อยู่ใน XML (ต้องทำใน Premiere): ซับ = Import .srt แล้วลากลงซีเควนซ์ (CC) · เกรด = Adjustment Layer + Lumetri › Creative › Look = .cube
 ใช้: python3 -I work/premiere_xml.py → <โฟลเดอร์โปรเจกต์ทีม>/C5395-draft2/<ชื่อคลิป>/"""
 import json, os, shutil, subprocess
@@ -60,13 +60,15 @@ def src_frames(a, b):
 def split_broll(a, b):
     cut = sorted({a, b} | {x for r in E['broll'] for x in r if a < x < b})
     return [(x, y, 'broll' if any(r[0] <= (x + y) / 2 < r[1] for r in E['broll']) else 'cam') for x, y in zip(cut, cut[1:]) if y - x > 0.01]
-pieces = []; t = 0                                          # (fid, start, end, in, out, scale)
+pieces = []; apieces = []; t = 0                            # ภาพ (fid, start, end, in, out, scale) · เสียง (start, end, in, out) จากกล้องเสมอ
 for s in E['segs']:
     for a, b, kind in split_broll(s['a'], s['b']):
         if kind == 'cam':
-            for sin, n in src_frames(a, b): pieces.append(('f-src', t, t + n, sin, sin + n, CAM_SCALE)); t += n
+            for sin, n in src_frames(a, b): pieces.append(('f-src', t, t + n, sin, sin + n, CAM_SCALE)); apieces.append((t, t + n, sin, sin + n)); t += n
         else:
-            n = round((b - a) * 30); pieces.append(('f-col', t, t + n, fr(a), fr(a) + n, 100)); t += n
+            n = round((b - a) * 30); pieces.append(('f-col', t, t + n, fr(a), fr(a) + n, 100)); t2 = t
+            for sin, m in src_frames(a, b): apieces.append((t2, t2 + m, sin, sin + m)); t2 += m
+            t += n
 TOTAL = t
 
 def clip(cid, fid, st, en, i, o, name, scale=None, links='', srctrack=None):
@@ -80,9 +82,9 @@ def link3(n):
     return ''.join(f'<link><linkclipref>{r}-{n}</linkclipref><mediatype>{mt}</mediatype><trackindex>{ti}</trackindex><clipindex>{n}</clipindex></link>'
                    for r, mt, ti in (('v', 'video', 1), ('a1', 'audio', 1), ('a2', 'audio', 2)))
 name = lambda fid: os.path.basename(files[fid][0])
-V1 = ''.join(clip(f'v-{n}', fid, st, en, i, o, name(fid), sc, link3(n)) for n, (fid, st, en, i, o, sc) in enumerate(pieces, 1))
-A1 = ''.join(clip(f'a1-{n}', fid, st, en, i, o, name(fid), None, link3(n), 1) for n, (fid, st, en, i, o, sc) in enumerate(pieces, 1))
-A2 = ''.join(clip(f'a2-{n}', fid, st, en, i, o, name(fid), None, link3(n), 2) for n, (fid, st, en, i, o, sc) in enumerate(pieces, 1))
+V1 = ''.join(clip(f'v-{n}', fid, st, en, i, o, name(fid), sc) for n, (fid, st, en, i, o, sc) in enumerate(pieces, 1))
+A1 = ''.join(clip(f'a1-{n}', 'f-src', st, en, i, o, name('f-src'), None, '', 1) for n, (st, en, i, o) in enumerate(apieces, 1))
+A2 = ''.join(clip(f'a2-{n}', 'f-src', st, en, i, o, name('f-src'), None, '', 2) for n, (st, en, i, o) in enumerate(apieces, 1))
 
 def gfx(cid, key, at):
     fid = f'f-{key}'; n = files[fid][2]; st = fr(at)
@@ -95,10 +97,25 @@ V4 = ''.join(gfx(f'sp-{i}', f'super{i}', s['at']) for i, s in enumerate(E['super
 sfx = [('f-pen', 0.3, 1.6)] + [('f-tw', s['at'] + 0.1, 0.75) for s in E['supers']]
 A3 = ''.join(clip(f'sfx-{n}', fid, fr(t0), fr(t0) + fr(d), 0, fr(d), name(fid), None, '', 1) for n, (fid, t0, d) in enumerate(sfx, 1))
 
+# A4: SFX ของ B-roll (click/swoosh/thump) แยกแทร็ก — ปรับระดับใน Premiere ได้เอง
+A4 = ''
+if C.get('sfx'):
+    SK = os.path.expanduser('~/.claude/skills/base-motion-collage/assets/sfx')
+    for kind, fn in dict(swoosh='swoosh.mp3', click='click.mp3', thump='thump.wav').items():
+        shutil.copy(f'{SK}/{fn}', f'{OUT}/{fn}'); file_def(f'f-sx-{kind}', f'{OUT}/{fn}', False, max(1, dur_frames(f'{OUT}/{fn}')), video=False)
+    for n, (t_, kind, vol) in enumerate(json.load(open(C['sfx'], encoding='utf-8')), 1):
+        if kind not in ('swoosh', 'click', 'thump') or not any(r[0] - .05 <= t_ < r[1] for r in E['broll']): continue
+        try: st = fr(new_t(t_))
+        except StopIteration: continue
+        fid = f'f-sx-{kind}'; ln = files[fid][2]
+        lv = (f'<filter><effect><name>Audio Levels</name><effectid>audiolevels</effectid><effectcategory>audiolevels</effectcategory>'
+              f'<effecttype>audiolevels</effecttype><mediatype>audio</mediatype><parameter><parameterid>level</parameterid><name>Level</name>'
+              f'<value>{vol * 3.2:.3f}</value></parameter></effect></filter>')   # x3.2 ~ เสียงพูดกล้องดิบเบากว่า -14 LUFS ~10 dB
+        A4 += clip(f'sx-{n}', fid, st, min(st + ln, TOTAL), 0, min(ln, TOTAL - st), name(fid), None, lv, 1)
 trk = lambda body: f'<track>{body}</track>'
 seq = (f'<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE xmeml>\n<xmeml version="4"><sequence id="seq-1"><name>{escape("C5395 " + TITLE)}</name>'
        f'<duration>{TOTAL}</duration><rate><timebase>30</timebase><ntsc>FALSE</ntsc></rate><media><video><format><samplecharacteristics>'
        f'<rate><timebase>30</timebase><ntsc>FALSE</ntsc></rate><width>1080</width><height>1920</height><pixelaspectratio>square</pixelaspectratio>'
-       f'</samplecharacteristics></format>{trk(V1)}{trk(V2)}{trk(V3)}{trk(V4)}</video><audio>{trk(A1)}{trk(A2)}{trk(A3)}</audio></media></sequence></xmeml>')
+       f'</samplecharacteristics></format>{trk(V1)}{trk(V2)}{trk(V3)}{trk(V4)}</video><audio>{trk(A1)}{trk(A2)}{trk(A3)}{trk(A4) if A4 else ''}</audio></media></sequence></xmeml>')
 x = f'{OUT}/{TITLE}.xml'; open(x, 'w', encoding='utf-8').write(seq)
 print(f'✅ {x}\n   {TOTAL} เฟรม = {TOTAL / 30:.2f} วิ (MP4 {E["total"]:.2f}) · V1 {len(pieces)} ชิ้น · Super {len(E["supers"])} · แผ่นแปะ {len(E.get("patches", []))}')

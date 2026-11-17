@@ -1,0 +1,8 @@
+# ไฟล์ที่ก๊อปมาจาก Windows (CRLF) ให้เก็บใน git เป็น LF เหมือนกันหมด
+* text=auto
+*.ttf binary
+*.png binary
+*.jpg binary
+*.wav binary
+*.mp3 binary
+*.cube binary

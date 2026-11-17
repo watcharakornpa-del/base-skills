@@ -161,8 +161,8 @@ for n, t in zip((1, 2, 3, 4), (at('ตั้งแต่หนึ่ง') + 0.15
     slide(f'st{n}', t, dx=200, s='click', d=0.3); tw(f"tl.fromTo('#dt{n}',{{opacity:0}},{{opacity:1,duration:0.1}},{r(t)});")
 t = at('ยิ่งเรา'); tw(f"tl.to('#rf',{{scaleY:1,duration:1.6,ease:'power1.inOut'}},{r(t)});"); fx(t, 'pen')
 for k, n in enumerate((1, 2, 3, 4)):
-    tw(f"tl.to('#st{n}',{{borderColor:'rgba(245,197,66,.65)',duration:0.15}},{r(t + 0.4 * k)});")
-    tw(f"tl.to('#st{n} .lbl',{{color:'#F5C542',duration:0.15}},{r(t + 0.4 * k)});")
+    tw(f"tl.to('#st{n}',{{borderColor:'rgba(234,58,31,.7)',duration:0.15}},{r(t + 0.4 * k)});")
+    tw(f"tl.to('#st{n} .lbl',{{color:'#EA3A1F',duration:0.15}},{r(t + 0.4 * k)});")
 tw(f"tl.to('#dt4',{{backgroundColor:'#ffffff',duration:0.15}},{r(t + 1.5)});"); bump('st4', t + 1.5, 1.04)
 pop('b1p', at('แรงจูงใจภายนอกนี้'), 'thump')
 
@@ -194,7 +194,7 @@ bump('gp', at('Strong'), 1.04, False); fx(at('Strong'), 'thump'); pop('b3p', at(
 a = at('อย่าใช้แค่') - 0.1
 broll(a, TOTAL, hd('TAKEAWAY', 'อย่าเล่นแค่<span class="red">ระดับ 1</span>')
       + f'<div class="card cmp" id="c1" style="left:70px"><div class="lbl" style="color:#8e8e93">LEVEL 1</div><div class="ttl-en">External</div><div class="sub-t th">รางวัล / บทลงโทษ</div>{gauge("gg1", 20, 400, 410, 0, False)}</div>'
-      + f'<div class="card cmp" id="c4" style="left:560px;border-color:rgba(245,197,66,.65)"><div class="lbl gold">LEVEL 4</div><div class="ttl-en">Integrated</div><div class="sub-t th">ตรงกับตัวตน</div>{gauge("gg4", 20, 400, 410, 0, False)}</div>')
+      + f'<div class="card cmp" id="c4" style="left:560px;border-color:rgba(234,58,31,.7)"><div class="lbl">LEVEL 4</div><div class="ttl-en">Integrated</div><div class="sub-t th">ตรงกับตัวตน</div>{gauge("gg4", 20, 400, 410, 0, False)}</div>')
 pop('c1', a + 0.3, 'click', dy=80); fill("gg1", a + 0.6, 22, 0.6)
 bump('c1', at('เพราะนั่นคุณ') + 1.4, 1.04)
 pop('c4', at('อ่อนแรง') - 0.6, 'thump', dy=80); fill("gg4", at('อ่อนแรง') - 0.3, 100, 0.8)

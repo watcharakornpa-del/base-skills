@@ -35,10 +35,26 @@ def find(s, after=0):
         i += 1
 
 q = lambda t: round(round(t * FPS) / FPS, 4)
+# ระดับเสียง Draft1 ทุก 10 ms -> เลื่อนจุดตัดให้ตกช่องเงียบจริง (pad คงที่ -0.06/+0.10 ไม่พอ: เวลาเริ่มคำจาก Scribe ช้ากว่าเสียงจริง ~0.1 วิ
+# -> "HR" ตอนเริ่ม / หางคำ "พอ ๆ กัน" ขาด · ทีมจับได้ C5395 Draft2)
+import subprocess, shutil, numpy as np
+_b = subprocess.run([shutil.which('ffmpeg') or 'ffmpeg', '-nostdin', '-v', 'error', '-i', C['draft1'], '-vn', '-ac', '1', '-ar', '16000', '-f', 's16le', '-'], capture_output=True).stdout
+_x = np.frombuffer(_b, np.int16).astype(np.float32) / 32768; _x = _x[:len(_x) // 160 * 160].reshape(-1, 160)
+ENV = 20 * np.log10(np.sqrt((_x ** 2).mean(1)) + 1e-9); QUIET = max(-57.0, float(np.percentile(ENV, 5)) + 12)
+def loud(a, b):
+    i, j = max(0, int(a * 100)), max(int(a * 100) + 1, int(b * 100)); return j <= len(ENV) and float(ENV[i:j].max()) >= QUIET
+def snap_in(a, mx=.3):                             # มีเสียงก่อนจุดเริ่ม -> ถอยจนเงียบ (ไม่เกิน mx)
+    t = a
+    while t > a - mx and loud(t - .04, t): t -= .01
+    return max(0, t - .02) if t > a - mx else a
+def snap_out(b, mx=.3):                            # มีเสียงหลังจุดจบ -> ยืดจนเงียบ
+    t = b
+    while t < b + mx and loud(t, t + .04): t += .01
+    return t + .02 if t < b + mx else b
 SEGS = []; at = 0
 for i, (p0, a0, p1, a1) in enumerate(plan.KEEP):
-    a = 0.0 if p0 is None else max(0, find(p0, a0)[0] - 0.06)
-    b = END if p1 is None else min(END, find(p1, a1)[1] + 0.10)
+    a = 0.0 if p0 is None else snap_in(max(0, find(p0, a0)[0] - 0.06))
+    b = END if p1 is None else min(END, snap_out(find(p1, a1)[1] + 0.10))
     s = dict(id=chr(65 + i), a=q(a), b=q(b), at=round(at, 4)); SEGS.append(s); at += s['b'] - s['a']
 TOTAL = round(at, 4)
 

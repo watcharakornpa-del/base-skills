@@ -83,7 +83,7 @@ pop('q5', at('คุณจะได้รู้ว่า'), 'thump'); mfill('q1'
 a = at('ถ้าคุณทำได้คุณจะ') - 0.1
 items_do = ['มอง 3 แกนเป็น Dynamic', 'ประเมิน 3 แกนก่อนเข้าห้อง', 'ปิดแกนที่อ่อนที่สุดก่อน']
 items_no = ['มองการโน้มน้าวเป็น Static', 'เตรียมแค่ดีลที่ดีที่สุด', 'ไม่ทำการบ้าน']
-ck = lambda id, y, lbl, items, ic, cls: (f'<div class="card ck" id="{id}" style="top:{y}px"><div class="lbl" style="color:{"#F5C542" if cls == "y" else "#EA3A1F"}">{lbl}</div>'
+ck = lambda id, y, lbl, items, ic, cls: (f'<div class="card ck" id="{id}" style="top:{y}px"><div class="lbl" style="color:{"#fff" if cls == "y" else "#EA3A1F"}">{lbl}</div>'
                                         + ''.join(f'<div class="it" id="{id}{k}"><span class="ic {cls}">{ic}</span>{t}</div>' for k, t in enumerate(items)) + '</div>')
 broll(a, TOTAL, hd('RECAP', 'เช็กก่อนเข้าห้อง<span class="red">ทุกครั้ง</span>') + ck('cd', 400, 'DO', items_do, CHK, 'y') + ck('cn', 780, "DON'T", items_no, CRS, 'n'))
 pop('cd', a + 0.3, None); pop('cn', a + 0.5, None)

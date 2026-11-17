@@ -16,6 +16,8 @@ CFG = dict(
     pad_in=0.06,       # เผื่อก่อนเริ่มคำ (กันตัดพยัญชนะต้น)
     pad_out=0.14,      # เผื่อหลังจบคำ (กันตัดเสียงท้าย/ลมหายใจครึ่ง ๆ)
     min_keep=0.30,     # ชิ้นที่สั้นกว่านี้หลังตัด = รวมกับชิ้นข้าง ๆ
+    snap=True,         # เลื่อนจุดตัดตามระดับเสียงจริงให้ตกช่องเงียบ (เวลาเริ่มคำจาก Scribe ช้ากว่าเสียงจริงได้ ~0.1 วิ)
+    snap_max=0.30,     # เลื่อนได้ไกลสุด (วินาที)
     seq_fps=30, width=1080, height=1920,
     cap_chars=28,      # ซับ: ตัวอักษรต่อบรรทัด (ทีมใช้ ~26 · สูงสุด 36)
     cap_max_dur=2.2,   # ซับ: ขึ้นนานสุดต่อบรรทัด
@@ -87,6 +89,46 @@ window.__timelines["main"] = tl;</script></body></html>'''
     open('work/subprev_log.txt', 'w', encoding='utf-8').write(r.stdout + r.stderr)
     if r.returncode or not os.path.exists(out): sys.exit('❌ เรนเดอร์พรีวิวซับไม่สำเร็จ ดู work/subprev_log.txt')
 
+def snap_cuts(R, src):
+    """เลื่อนขอบทุกชิ้นให้ตกช่องเงียบจริง (วัดจากเสียงไฟล์ดิบ ทุก 10 ms)
+    เจอจริง C5395 (10 พ.ย.): pad คงที่ 0.06/0.14 ไม่พอ — "เอช" ของคำว่า HR เริ่มก่อน Scribe 0.12 วิ หัวคำขาด ·
+    หางคำ "กัน" ยังไม่หายตอนตัด · บางจุด pad_out ล้นเข้าพยางค์แรกของคำถัดไปในเทคที่ทิ้ง (ได้เสียงแว่บ)
+    หัวชิ้น: ถ้ามีเสียงก่อนจุดตัด → ถอยไปจนเจอเงียบ ≥40 ms (ไม่เกิน snap_max)
+    หางชิ้น: ถ้ามีเสียงหลังจุดตัด → ยืดไปจนเงียบ · ถ้ายืดแล้วไม่เจอ (คนพูดต่อในเทคที่ทิ้ง) → หดกลับไปช่องว่างระหว่างคำก่อนหน้า"""
+    try:
+        import numpy as np
+    except ImportError:
+        print('⚠️ ไม่มี numpy — ข้ามการเลื่อนจุดตัดตามเสียง (python -m pip install numpy)'); return []
+    b = subprocess.run([FF, '-nostdin', '-v', 'error', '-i', src, '-vn', '-ac', '1', '-ar', '16000', '-f', 's16le', '-'], capture_output=True).stdout
+    x = np.frombuffer(b, np.int16).astype(np.float32) / 32768; x = x[:len(x) // 160 * 160].reshape(-1, 160)
+    env = 20 * np.log10(np.sqrt((x ** 2).mean(1)) + 1e-9)                 # dB ทุก 10 ms
+    floor = float(np.percentile(env, 5)); thr = max(-57.0, floor + 12)  # "เงียบ" = ไม่เกินพื้นห้อง +12 dB
+    def loud(a, b, th=None):
+        i, j = max(0, int(a * 100)), max(int(a * 100) + 1, int(b * 100))
+        return float(env[i:j].max()) >= (th or thr) if j <= len(env) else False
+    dip = thr + 9                                                       # ช่องว่างระหว่างคำ (ไม่เงียบสนิท) — ใช้เมื่อพูดต่อเนื่อง
+    mx = CFG['snap_max']; log = []
+    for k, r in enumerate(R):
+        s, e = r[0], r[1]; first, last = r[3][0], r[3][-1]
+        if loud(s - .06, s):                                            # หัวคำโดนตัด → ถอยไปช่องเงียบ (ไม่เจอ → ช่องว่างระหว่างคำ)
+            for th, lim in ((thr, mx), (dip, .15)):
+                t = s
+                while t > s - lim and loud(t - .04, t, th): t -= .01
+                if t > s - lim: r[0] = max(0, t - .02); break
+        if loud(e, e + .06):                                            # หางคำโดนตัด → ยืด หรือหดกลับ
+            for th, lim in ((thr, mx), (dip, .15)):
+                t = e
+                while t < e + lim and loud(t, t + .04, th): t += .01
+                if t < e + lim: r[1] = t + .02; break
+                t = e
+                while t > last['end'] - .02 and loud(t - .04, t, th): t -= .01
+                if t > last['end'] - .02: r[1] = t; break
+        # ห้ามทับชิ้นก่อนหน้าที่อยู่ติดกันในไฟล์ดิบ
+        if k and R[k - 1][0] < s and r[0] < R[k - 1][1]: r[0] = R[k - 1][1]
+        if abs(r[0] - s) > .005 or abs(r[1] - e) > .005:
+            log.append(f"เลื่อนจุดตัด #{first['id']}–#{last['id']}  หัว {r[0] - s:+.2f}  หาง {r[1] - e:+.2f} วิ")
+    return log
+
 def tc(sec, fps):  # วินาที → เฟรม (จำนวนเต็ม)
     return int(round(sec * fps))
 
@@ -111,6 +153,7 @@ def build(keep_only=False):
             else:
                 R.append([s, e, p['id'], [p]])
             prev = p['id']
+    if CFG['snap']: report += snap_cuts(R, src)
     R = [r for r in R if r[1] - r[0] >= CFG['min_keep']] or R
     for a, b, why in C.get('remove', []):
         report.append(f"ตัดในช่วง  #{a}–#{b} {P[a]['start']:.2f}–{P[b]['end']:.2f} · {why} · “{''.join(P[i]['text'] for i in range(a, b + 1))[:60]}”")

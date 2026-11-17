@@ -45,6 +45,23 @@ for r in br:
 br = m
 json.dump(br, open(f'{W}/broll.json', 'w'), indent=1)
 
+# SFX ของ B-roll (click/swoosh/thump) จากโปรเจกต์ collage เดิม — Draft2 ใส่ SFX แยก ไม่ใช้เสียงในไฟล์ collage
+# (เสียง collage = เสียงพูด loudnorm -14 + SFX + limiter -> เอามาใช้แล้วโดน compressor ซ้ำ "เสียงถูกดันขึ้น"
+#  + ขอบเหลื่อมกับเสียงกล้อง -> คำซ้ำ/คำแหว่ง · ทีมจับได้ C5395 Draft2-4)
+import glob
+cdur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', collage], capture_output=True, text=True).stdout)
+sfx = None
+for sj in glob.glob(os.path.expanduser('~/Developer/video-use/*/work/segs.json')):
+    try: S_ = json.load(open(sj, encoding='utf-8'))
+    except Exception: continue
+    ss = S_.get('segs', [])
+    if abs(S_.get('total', 0) - cdur) < .2 and len(ss) == len(br) and all(abs(x[1] - y[0]) < .3 for x, y in zip(ss, br)) \
+            and os.path.exists(os.path.join(os.path.dirname(sj), 'sfx.json')):
+        sfx = os.path.join(os.path.dirname(sj), 'sfx.json'); break
+cj = json.load(open(f'{W}/clip.json', encoding='utf-8')); cj['sfx'] = sfx
+json.dump(cj, open(f'{W}/clip.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+print('   SFX collage:', sfx or '⚠️ หาไม่เจอ — ใส่ path ของ work/sfx.json ในโปรเจกต์ collage ลง work/clip.json ช่อง "sfx" (ไม่งั้น B-roll ไม่มี SFX)')
+
 # ถอดเสียง Draft1 (เวลาตรงกับ timestamp ในรีฟ)
 if not os.path.exists(f'{W}/scribe.json'):
     subprocess.run(['python3', '-I', os.path.expanduser('~/.claude/skills/base-rough-cut/scripts/transcribe.py'), draft1], cwd=P, check=True)

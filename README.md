@@ -10,6 +10,7 @@
 | `base-motion-blueprint` | Hook เขียนสด + Super ลายมือพู่กัน + ฉากวาดบนกระดาษเขียนแบบ (บรีฟ MAYTWIN) |
 | `base-motion-joinstick` | ไฟล์ดิบ → คลิป Micro Learning สำหรับแอป JOINSTICK (ภาษา UI ของแอป) |
 | `base-rough-cut` | ไฟล์ดิบ → rough cut XML + ซับ SRT สำหรับ Premiere |
+| `mp-sheet-caption` | แปะลิงก์ Drive คลิปที่ส่งแล้ว + แคปชั่น/แฮชแท็ก ลงชีตคอนเทนต์ (แท็บ mp_base) |
 
 ## ติดตั้งในเครื่องใหม่
 ```bash

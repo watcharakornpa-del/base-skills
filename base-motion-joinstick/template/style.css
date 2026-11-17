@@ -1,5 +1,5 @@
 /* base-motion-joinstick · UI/CI ของแอป JOINSTICK (ดูจาก JOINSTICK-Screens-2026-11-10)
-   พื้นดำ #000 · การ์ด #131313 ขอบขาวจาง · แดงไฟ #EA3A1F · ทอง Stage #F5C542 · Poppins (อังกฤษ/ตัวเลข) + IBM Plex Sans Thai (ไทย)
+   พื้นดำ #000 · การ์ด #131313 ขอบขาวจาง · แดงไฟ #EA3A1F · ขาว · ใช้แค่ 3 สี ดำ/แดง/ขาว (16 พ.ย. 2026 เลิกใช้ทอง) · Poppins (อังกฤษ/ตัวเลข) + IBM Plex Sans Thai (ไทย)
    ป้ายหัวการ์ด = ตัวพิมพ์ใหญ่สีแดง ตัวเล็ก ระยะห่างกว้าง (แบบ "MANAGER REVIEW" "STAGE 3") */
 @font-face { font-family: 'Poppins'; font-weight: 700; src: url('fonts/Poppins-Bold.ttf'); }
 @font-face { font-family: 'Poppins'; font-weight: 900; src: url('fonts/Poppins-Black.ttf'); }
@@ -7,7 +7,7 @@
 @font-face { font-family: 'Plex Thai'; font-weight: 600; src: url('fonts/IBMPlexSansThai-SemiBold.ttf'); }
 @font-face { font-family: 'Plex Thai'; font-weight: 700; src: url('fonts/IBMPlexSansThai-Bold.ttf'); }
 :root { --bg:#000; --card:#131313; --card2:#1c1c1e; --line:rgba(255,255,255,.09); --red:#EA3A1F; --red2:#FF6A3D;
-  --gold:#F5C542; --txt:#fff; --mute:#8e8e93; --dim:#c7c7cc; }
+  --txt:#fff; --mute:#8e8e93; --dim:#c7c7cc; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 1080px; height: 1920px; background: #000; overflow: hidden; }
 #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #000;
@@ -15,7 +15,6 @@ html, body { width: 1080px; height: 1920px; background: #000; overflow: hidden; 
 .th { font-family: 'Plex Thai', 'Poppins', sans-serif; }
 .en { font-family: 'Poppins', 'Plex Thai', sans-serif; }
 .red { color: var(--red); }
-.gold { color: var(--gold); }
 #talk { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
 
 /* ป้ายหัว (small caps แดง) + หัวข้อ */
@@ -48,8 +47,8 @@ html, body { width: 1080px; height: 1920px; background: #000; overflow: hidden; 
 
 /* ===== การ์ดระดับ (bottom sheet ล่างจอ ทับโต๊ะ) แบบแถว Shift Stage ===== */
 .lv { position: absolute; left: 60px; top: 1450px; width: 960px; height: 268px; z-index: 14; opacity: 0;
-  background: rgba(19,19,19,.95); border: 2px solid rgba(245,197,66,.55); border-radius: 40px; padding: 38px 46px; }
-.lv .lbl { color: var(--gold); }
+  background: rgba(19,19,19,.95); border: 2px solid rgba(255,255,255,.22); border-radius: 40px; padding: 38px 46px; }
+.lv .lbl { color: var(--red); }
 .lv .ttl-en { margin-top: 18px; font-size: 80px; }
 .lv .sub-t { margin-top: 10px; }
 .lv .track { position: absolute; right: 46px; top: 40px; display: flex; gap: 10px; }
@@ -70,12 +69,12 @@ html, body { width: 1080px; height: 1920px; background: #000; overflow: hidden; 
 .st .lbl { font-size: 22px; color: var(--mute); }
 .st .ttl-en { font-size: 54px; margin-top: 12px; }
 .st .th-d { position: absolute; right: 40px; top: 52px; font: 600 36px/1.2 'Plex Thai'; color: var(--dim); }
-.st.on { border-color: rgba(245,197,66,.6); }
-.st.on .lbl { color: var(--gold); }
+.st.on { border-color: rgba(234,58,31,.7); }
+.st.on .lbl { color: var(--red); }
 .rail { position: absolute; left: 92px; width: 8px; border-radius: 4px; background: #2c2c2e; }
 .rail-f { position: absolute; left: 92px; width: 8px; border-radius: 4px; background: var(--red); transform-origin: 50% 100%; }
 .dot { position: absolute; left: 78px; width: 36px; height: 36px; border-radius: 50%; background: #3a3a3c; border: 6px solid #000; opacity: 0; }
-.dot.on { background: #fff; box-shadow: 0 0 0 6px rgba(245,197,66,.35); }
+.dot.on { background: #fff; box-shadow: 0 0 0 6px rgba(234,58,31,.35); }
 
 /* แชทภารกิจ (B2) */
 .chat-hd { position: absolute; left: 0; top: 0; width: 1080px; height: 330px; background: #0b0b0b; border-bottom: 2px solid var(--line); }
@@ -112,7 +111,9 @@ html, body { width: 1080px; height: 1920px; background: #000; overflow: hidden; 
 .lv.dont { border-color: rgba(234,58,31,.7); }
 .lv.dont .lbl { color: var(--red); }
 .lv.dont .track i.f { background: var(--red); }
-.lv.do .track i.f { background: var(--gold); }
+.lv.do { border-color: rgba(255,255,255,.55); }
+.lv.do .lbl { color: #fff; }
+.lv.do .track i.f { background: #fff; }
 /* หลอดพลัง (meter) */
 .mtr { position: absolute; left: 70px; width: 940px; height: 176px; padding: 24px 36px; opacity: 0; }
 .mtr .lbl { color: var(--mute); }
@@ -143,7 +144,7 @@ html, body { width: 1080px; height: 1920px; background: #000; overflow: hidden; 
 .ck .lbl { margin-bottom: 14px; }
 .ck .it { display: flex; align-items: center; gap: 20px; font: 600 42px/1.6 'Plex Thai', 'Poppins'; color: #fff; opacity: 0; }
 .ck .ic { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: none; }
-.ck .ic.y { background: var(--gold); }
+.ck .ic.y { background: #fff; }
 .ck .ic.n { background: var(--red); }
 .lv .ttl-en.th { font: 700 60px/1.3 'Plex Thai', 'Poppins'; margin-top: 14px; }
 .sub.sm { font-size: 50px; }

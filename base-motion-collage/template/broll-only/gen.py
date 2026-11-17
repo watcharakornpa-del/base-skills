@@ -102,6 +102,64 @@ def broll(t0, t1, card, body):
     fx(t0, 'swoosh', 0.35)
     return n
 
+# ===== B-roll ตัวเลข: เส้นกราฟวาดตัวเอง + ตัวเลขใหญ่นับตามปลายเส้น (ใช้ตอนคนพูดอ้างสถิติ/การเติบโต) =====
+# ต้นแบบอนุมัติ 10 พ.ย. 2026 (F:\AI\test-animation-skills\collage-stat) · ไอเดียจากสกิล /graph ทำใหม่ในภาษาภาพ collage
+STAT_INK = {'navy':  dict(line='#ffffff', tip='#ff3608', burst='#ff3608', grid='rgba(255,255,255,.16)', base='rgba(255,255,255,.55)', yr='rgba(255,255,255,.6)', lab='s-paper'),
+            'ember': dict(line='#0d1b2a', tip='#0d1b2a', burst='#0d1b2a', grid='rgba(13,27,42,.22)',  base='rgba(13,27,42,.6)',    yr='rgba(13,27,42,.75)',  lab='s-paper')}
+def stat(id, t0, t1, card, label, values, ticks=None, t_land=None, prefix='', suffix='', decimals=0, final=None, extra=''):
+    """ช่วง B-roll ตัวเลข (เรียก broll() ให้เอง) · ตัวเลขต้องมาจากที่คนพูดอ้าง/มีที่มา — ห้ามแต่ง
+    id = คำนำหน้า id (เช่น 's1') · label = หัวข้อสั้น (ไทย/อังกฤษ) · values = ค่าทุกจุด เก่า→ใหม่ (≥ 2 ค่า, ≥ 0)
+    ticks = ป้ายใต้แกน (ปี/เดือน) ≤ 8 · t_land = เวลาที่เส้นแตะปลาย (ใส่ at('คำที่พูดตัวเลข')) ค่าเริ่ม = t0+3.5
+    final = เลขที่นับไปจบ (ให้ values เป็นหน่วยย่อได้ เช่น values เป็นพัน final เป็นเต็ม) · extra = ชิ้น collage เพิ่ม"""
+    k = STAT_INK[card]; V = [float(v) for v in values]; vmax = max(V) or 1; last = V[-1] or 1
+    FIN = float(final) if final is not None else V[-1]; SC = FIN / last
+    X0, X1, Y0, Y1 = 70, 800, 900, 600                      # พิกัดในการ์ด 890×1250 (วงกลมหน้าเริ่ม y 1020 ในการ์ด)
+    px = lambda i: X0 + i * (X1 - X0) / (len(V) - 1); py = lambda v: Y0 - v / vmax * (Y0 - Y1)
+    P = [(px(i), py(v)) for i, v in enumerate(V)]; d = f'M{P[0][0]:.1f},{P[0][1]:.1f}'
+    for i in range(len(P) - 1):                              # Catmull-Rom → เส้นโค้งเนียนผ่านทุกจุด
+        p0, p1, p2, p3 = P[max(0, i - 1)], P[i], P[i + 1], P[min(len(P) - 1, i + 2)]; c = 0.5 / 3
+        d += (f' C{p1[0] + (p2[0] - p0[0]) * c:.1f},{p1[1] + (p2[1] - p0[1]) * c:.1f}'
+              f' {p2[0] - (p3[0] - p1[0]) * c:.1f},{p2[1] - (p3[1] - p1[1]) * c:.1f} {p2[0]:.1f},{p2[1]:.1f}')
+    fmt = lambda x: f'{prefix}{x:,.{decimals}f}{suffix}'
+    em = sum(.56 if ch.isdigit() else .24 if ch in ',.' else .25 if ch == ' ' else .62 for ch in fmt(FIN))
+    size = int(min(230, 760 / max(1, em)))                  # เลขยาว → หดเอง ไม่ล้นการ์ด
+    bx = (770, 440) if 150 + size * em + 20 <= 770 else (P[-1][0] + 95 - 100, P[-1][1] + 250 - 100)   # เส้นระเบิด: ข้างเลข · เลขยาวไม่มีที่ → ที่ปลายเส้น
+    tk = ''.join(f'<text class="st-yr" x="{px(i):.0f}" y="955" text-anchor="middle" opacity="0" fill="{k["yr"]}">{t}</text>'
+                 for i, t in enumerate((ticks or [])[:len(V)]))
+    th = ' th' if any('\u0e00' <= ch <= '\u0e7f' for ch in label) else ''
+    body = (strip(f'{id}l', label, 140, 300, k['lab'], ('thm' if th else 'mid') + th, -3, z=8)
+        + f'<div class="st-num" id="{id}n" style="font-size:{size}px;z-index:7">{fmt(0)}</div>'
+        + f'<svg class="st-chart" width="890" height="1250" viewBox="0 0 890 1250" style="z-index:5">'
+          f'<line id="{id}g0" stroke="{k["grid"]}" stroke-width="3" stroke-dasharray="10 14" x1="{X0}" y1="{Y1}" x2="{X0}" y2="{Y1}"/>'
+          f'<line id="{id}g1" stroke="{k["grid"]}" stroke-width="3" stroke-dasharray="10 14" x1="{X0}" y1="{(Y0 + Y1) / 2}" x2="{X0}" y2="{(Y0 + Y1) / 2}"/>'
+          f'<line id="{id}g2" stroke="{k["base"]}" stroke-width="5" x1="{X0}" y1="{Y0}" x2="{X0}" y2="{Y0}"/>{tk}'
+          f'<path id="{id}p" d="{d}" opacity="0" fill="none" stroke="{k["line"]}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>'
+          f'<circle id="{id}h" r="17" fill="none" stroke="{k["tip"]}" stroke-width="6" opacity="0"/>'
+          f'<circle id="{id}t" r="17" fill="{k["tip"]}" stroke="#ffffff" stroke-width="6" opacity="0"/></svg>'
+        + line(f'{id}b', *bx, 200, 200, BURST, k['burst'], 9) + extra)
+    ROT[f'{id}n'] = -2
+    broll(t0, t1, card, body)
+    T = globals().get('rt') or r                             # broll-only = เวลาบนม้วน · คลิปเต็ม = เวลาจริง
+    tl_ = t_land if t_land is not None else t0 + 3.5
+    tl_ = min(tl_, t1 - 1.0); td = t0 + 0.9; dur = round(max(0.8, tl_ - td), 3)
+    slap(f'{id}l', t0 + 0.35); slap(f'{id}n', t0 + 0.55)
+    for j in range(3): tw(f"tl.to('#{id}g{j}',{{attr:{{x2:{X1 + 20}}},duration:.45,ease:'power3.out'}},{T(t0 + 0.6 + j * 0.06)});")
+    tw(f"document.querySelectorAll('#g{len(SEGS)} .st-yr').forEach((el,i)=>tl.to(el,{{opacity:1,duration:.25}},{T(t0 + 0.75)}+i*.04));")
+    js_ = '''(()=>{const ln=document.getElementById('@p'),tp=document.getElementById('@t'),hl=document.getElementById('@h'),nm=document.getElementById('@n');
+      const L=ln.getTotalLength();ln.setAttribute('stroke-dasharray',L);ln.setAttribute('stroke-dashoffset',L);const st={p:0};
+      const f=x=>PRE+x.toLocaleString('en-US',{minimumFractionDigits:DEC,maximumFractionDigits:DEC})+SUF;
+      function dr(){const q=st.p*L;ln.setAttribute('stroke-dashoffset',L-q);const pt=ln.getPointAtLength(Math.max(.01,q));
+        for(const c of [tp,hl]){c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y);}
+        const v=st.p>=1?FIN:st.p<=0?0:Math.round((Y0-pt.y)/(Y0-Y1)*VMAX*SC*10**DEC)/10**DEC;nm.textContent=f(v);}
+      dr();tl.to(['#@t','#@p'],{opacity:1,duration:.12},TD);tl.to(st,{p:1,duration:DUR,ease:'power1.inOut',onUpdate:dr},TD);})();'''
+    for a_, b_ in (('@', id), ('PRE', json.dumps(prefix)), ('SUF', json.dumps(suffix)), ('DEC', str(decimals)), ('FIN', repr(FIN)),
+                   ('VMAX', repr(vmax)), ('SC', repr(SC)), ('Y0', str(Y0)), ('Y1', str(Y1)), ('TD', str(T(td))), ('DUR', str(dur))):
+        js_ = js_.replace(a_, b_)
+    tw(js_); fx(td, 'pen', 0.3)
+    tw(f"tl.fromTo('#{id}h',{{opacity:.9,attr:{{r:17}}}},{{opacity:0,attr:{{r:70}},duration:.6,ease:'power2.out',immediateRender:false}},{T(tl_)});")
+    bump(f'{id}n', tl_); fx(tl_, 'thump'); draw(f'{id}b', tl_ + 0.05, 0.3)
+    boil([f'{id}l'], t0, t1); boil([f'{id}n'], tl_, t1)
+
 # ===== ช่วง B-roll (ขึ้นเฉพาะตอนยกตัวอย่าง / เปรียบเทียบเป็นภาพ) =====
 # 1 · ตัวอย่างเครื่องมือ: Gen Y อยากให้ใช้คอม vs Gen Z ใช้ iPad
 a, b = at('คนนึงอยาก') - 0.1, at('แล้วก็หาว่า')
