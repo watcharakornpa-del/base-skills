@@ -61,6 +61,7 @@ CRS = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M6 6L18 18M18 6L
 def lvcard(id, a, b, lbl, name, desc, n, tot, cls=''):
     html.append(f'<div class="lv {cls}" id="{id}"><div class="lbl">{lbl}</div>{track(n, tot)}<div class="ttl-en th">{name}</div><div class="sub-t th">{desc}</div></div>')
     slide(id, a, dy=120); tw(f"tl.to('#{id}',{{opacity:0,y:60,duration:0.2,ease:'power2.in'}},{r(b - 0.2)});")
+    HIDE_SUBS.append((a, b))   # ผู้ใช้สั่ง: กล่องข้อความที่อนิเมทขึ้นมา (การ์ดล่างจอด้วย) ไม่ต้องมีซับ
 
 # ---------- ท่าขยับ ----------
 def pop(id, t, s='click', d=0.28, dy=40):
@@ -91,11 +92,11 @@ def hook(t_end, words):
     tw(f"tl.to('#hook',{{opacity:0,duration:0.2,ease:'power2.in'}},{r(t_end - 0.2)});")
     HIDE_SUBS.append((0, t_end))
 TH = at('เป็นสิ่งที่สำคัญ') + 0.3
-hook(TH, [
-    (0.05, 'MICRO LEARNING', 'hk-lbl', 600),
-    (at('ทุกคน') + 0.3, 'ทุกคนน่าจะรู้จัก', 'hk-s', 700),
-    (at('Motivation'), 'Motivation', 'hk-xl', 800),
-    (at('แรงจูงใจ'), 'แรงจูงใจ', 'hk-em', 980),
+hook(TH, [   # ปก = ชื่อคลิปจากชีตสคริปต์ (คอลัมน์ "ชื่อคลิป / ช็อต") · ไม่มีป้าย MICRO LEARNING (ผู้ใช้อนุมัติ 18 พ.ย. 2026 · ต้นแบบ C2675)
+    (0.1, '<span class="en">Motivation</span>', 'hk-xl', 610),   # คำหลักหน้า ":" บรรทัด 1 ขาว (อังกฤษ/สั้น = hk-xl)
+    (0.4, 'แรงจูงใจ 4 ระดับ', 'hk-em', 770),                       # บรรทัด 2 แดง (ไทยใหญ่)
+    (0.8, 'ทำไมคนทำงานด้วยใจ', 'hk-s', 980),                       # ส่วนหลัง ":" แบ่ง 1–2 บรรทัดตามวลี ขาว
+    (1.1, 'ไม่เท่ากัน', 'hk-s', 1060),
 ])
 
 # ===== 2 · Super: ชิป/การ์ดดำเหนือหัวคนพูด (y 110–370) · ไม่มีซับช่วงนี้ =====
@@ -122,7 +123,7 @@ sup(at('Perfectionist'), at('Perfectionist') + 3.6, [(pill('k6', 'Perfectionist'
 sup(at('Take'), at('อย่าใช้แค่') - 0.1, [(pill('k7a', 'TAKEAWAY', on=True), 110), (chip('k7b', 'แตะให้ถึง<span class="red">ระดับ 4</span>'), 230)],
     [('k7a', at('Take')), ('k7b', at('อย่างน้อยแตะ'))])
 
-# ===== 3 · การ์ดระดับ (bottom sheet ล่างจอ ทับโต๊ะ) ค้างตลอดช่วงอธิบายแต่ละระดับ · ซับยังขึ้น =====
+# ===== 3 · การ์ดระดับ (bottom sheet ล่างจอ ทับโต๊ะ) ค้างตลอดช่วงอธิบายแต่ละระดับ · ไม่มีซับระหว่างการ์ดขึ้น =====
 LV = [('Level', 'Introjected', 1, 'External', 'ทำเพราะ<b class="red">รางวัล</b> หรือกลัว<b class="red">โดนลงโทษ</b>'),
       ('Introjected', 'ระดับที่สามคือ', 2, 'Introjected', 'ทำเพราะกลัว<b class="red">รู้สึกผิด</b> หรือกลัว<b class="red">เสียหน้า</b>'),
       ('ระดับที่สามคือ', 'ระดับสุดท้าย', 3, 'Identified', 'ทำเพราะรู้ว่างานนี้<b class="red">สำคัญ</b> · ตอบได้ว่า Why'),
@@ -131,6 +132,7 @@ for a_, b_, n, name, desc in LV:
     a, b = at(a_) - 0.1, at(b_) - 0.15
     html.append(f'<div class="lv" id="lv{n}"><div class="lbl">LEVEL {n} / 4</div>{track(n)}<div class="ttl-en">{name}</div><div class="sub-t th">{desc}</div></div>')
     slide(f'lv{n}', a, dy=120); tw(f"tl.to('#lv{n}',{{opacity:0,y:60,duration:0.2,ease:'power2.in'}},{r(b - 0.2)});")
+    HIDE_SUBS.append((a, b))   # การ์ดขึ้น = ไม่มีซับ (ผู้ใช้สั่ง C2676)
 bump('lv1', at('ต่ำสุด'), 1.04)
 
 # ===== 4 · B-roll: หน้าจอแบบแอป + หน้าคนพูดในวงกลมขอบแดง =====
@@ -212,13 +214,17 @@ for i in range(len(caps) - 1):           # คำขาดข้ามบรร�
     if caps[i][2].endswith('แล้') and caps[i + 1][2].startswith('ว'): caps[i][2] += 'ว'; caps[i + 1][2] = caps[i + 1][2][1:]
 ch = []
 for i, (s_, e_, txt) in enumerate(caps):
-    for h0, h1 in HIDE_SUBS:
-        if s_ < h1 and e_ > h0:
+    for h0, h1 in HIDE_SUBS:     # Hook / Super / การ์ดล่างจอ / B-roll: ทับเกิน 40% ไม่ขึ้นเลย · ทับนิดเดียว → ตัดหัว/ท้าย (ผู้ใช้: กล่องอนิเมทขึ้น = ไม่มีซับ)
+        ov = min(e_, h1) - max(s_, h0)
+        if ov > 0.4 * (e_ - s_): s_ = e_; break
+        if ov > 0:
             if s_ >= h0: s_ = max(s_, h1)
             else: e_ = min(e_, h0)
     if e_ - s_ < 0.3: continue
-    ch.append(f'<div class="sub{" sm" if len(txt) > 30 else ""}" id="sb{i}">{escape(txt)}</div>')   # บรรทัดยาวเกิน 30 ตัว → ย่อ ไม่ให้ชนขอบจอ
+    assert len(txt) <= 30, f'ซับยาวเกิน 30 ตัว (ห้ามย่อ ให้แบ่งบรรทัดใน captions.txt): {txt}'
+    ch.append(f'<div class="sub" id="sb{i}">{escape(txt)}</div>')
     tw(f"tl.fromTo('#sb{i}',{{opacity:0}},{{opacity:1,duration:0.01}},{r(s_)});"); tw(f"tl.set('#sb{i}',{{opacity:0}},{r(e_)});")
+json.dump(sorted(HIDE_SUBS), open('work/hide.json', 'w'))   # ช่วงที่ห้ามมีซับ → scripts/check_final.py ตรวจว่าซับไม่ทับ
 tw(f"tl.to('#fade',{{opacity:1,duration:0.5}},{r(TOTAL - 0.5)});")
 
 doc = f'''<!doctype html>
@@ -246,12 +252,15 @@ open('index.html', 'w', encoding='utf-8').write(doc)
 
 FF = os.environ.get('FFMPEG') or shutil.which('ffmpeg') or 'ffmpeg'
 for n, a, b in SEGS:
-    o = f'assets/cam{n}.mp4'; key = f'{a}-{b}-{FACE_CROP}'; st = o + '.key'
+    o = f'assets/cam{n}.mp4'; key = f"{a}-{b}-{FACE_CROP}-{os.path.getsize('assets/talk.mp4')}-{os.path.getmtime('assets/talk.mp4')}"; st = o + '.key'
     if os.path.exists(o) and os.path.exists(st) and open(st).read() == key: continue
     subprocess.run([FF, '-nostdin', '-v', 'error', '-ss', str(a), '-t', str(r(b - a)), '-i', 'assets/talk.mp4', '-an', '-vf', f'crop={FACE_CROP},scale=384:384',
                     '-c:v', 'libx264', '-crf', '18', '-g', '30', '-pix_fmt', 'yuv420p', '-y', o], check=True); open(st, 'w').write(key)
-if not os.path.exists('assets/voice.wav'):
+# เสียงต้องทำใหม่ทุกครั้งที่คลิปพูดเปลี่ยน (ตัดใหม่) — เดิมเช็คแค่ว่ามีไฟล์ → ใช้เสียงชุดตัดเก่า เสียงไม่ตรงปาก 0.6–1.3 วิ (JOINSTICK C2675)
+VKEY = f"{os.path.getsize('assets/talk.mp4')}-{os.path.getmtime('assets/talk.mp4')}-{TOTAL}"
+if not (os.path.exists('assets/voice.wav') and os.path.exists('assets/voice.key') and open('assets/voice.key').read() == VKEY):
     subprocess.run([FF, '-nostdin', '-v', 'error', '-i', 'assets/talk.mp4', '-vn', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', '48000', '-ac', '2', '-y', 'assets/voice.wav'], check=True)
+    open('assets/voice.key', 'w').write(VKEY)   # เขียนหลังทำเสียงสำเร็จเท่านั้น
 FILES = {'swoosh': 'assets/sfx/swoosh.mp3', 'click': 'assets/sfx/click.mp3', 'thump': 'assets/sfx/thump.wav', 'pen': 'assets/sfx/pen.wav'}
 cmd = [FF, '-nostdin', '-v', 'error', '-i', 'assets/voice.wav']; fl = ['[0:a]aformat=sample_rates=48000:channel_layouts=stereo[v]']; lab = ['[v]']
 for k, (tm, kind, vol) in enumerate(SFX, 1):

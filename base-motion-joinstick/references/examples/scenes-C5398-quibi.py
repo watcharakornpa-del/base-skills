@@ -12,7 +12,7 @@ def hook(t_end, words):
     HIDE_SUBS.append((0, t_end))
 TH = at('ลองไปจับ') + 0.8
 hook(TH, [
-    (0.05, 'MICRO LEARNING', 'hk-lbl', 600),
+    # (ปกแบบเก่า · ปัจจุบันใช้ชื่อคลิปจากสคริปต์ ดู template/gen.py)
     (at('ทุกคนน่าจะเริ่มเอา'), 'ทุกคนน่าจะเริ่มใช้', 'hk-s', 700),
     (at('Three'), '3 Certainties', 'hk-xl', 800),
     (at('แกนความมั่นใจ'), 'แกนความมั่นใจ', 'hk-em', 980),

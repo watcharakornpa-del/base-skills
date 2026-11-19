@@ -1,0 +1,58 @@
+.scrrow.sm2 .wrap .pill { font-size: 30px; padding: 10px 20px; }
+.duo { display: flex; gap: 20px; }
+.duo .chip { width: 460px; opacity: 0; }
+.duo .chip .ttl { font-size: 38px; line-height: 1.35; white-space: normal; }
+.duo .chip .lbl { letter-spacing: 1px; font-family: "Plex Thai"; font-weight: 600; }
+
+/* ===== C2676 · โต๊ะ 5 แหล่ง · ขั้นค้นเว็บ · Memory · ท่อ MCP (3 สี ดำ/แดง/ขาว) ===== */
+.tree { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+.nd { position: absolute; width: 300px; height: 120px; background: var(--card); border: 2px solid var(--line); border-radius: 30px;
+  display: flex; align-items: center; justify-content: center; opacity: 0; }
+.nd .en { font: 700 40px/1 'Poppins', 'Plex Thai'; color: #fff; white-space: nowrap; }
+.nd.hot { border: 3px solid var(--red); }
+.nd.hot .en { color: var(--red); }
+.hub { position: absolute; left: 430px; top: 680px; width: 220px; height: 220px; border-radius: 50%; background: var(--red);
+  display: flex; align-items: center; justify-content: center; opacity: 0; }
+.hub .en { font: 900 96px/1 'Poppins', 'Plex Thai'; color: #fff; }
+.desk { left: 70px; top: 470px; width: 940px; height: 560px; padding: 30px 36px; background: #0d0d0d; }
+.desk .lbl { color: var(--mute); }
+.it2 { position: absolute; width: 400px; height: 150px; background: var(--card2); border: 2px solid rgba(255,255,255,.25); border-radius: 26px;
+  display: flex; align-items: center; gap: 24px; padding: 0 30px; opacity: 0; box-shadow: 0 14px 30px rgba(0,0,0,.6); }
+.it2 .ic { width: 60px; height: 64px; flex: none; }
+.it2 .lbl { font-size: 22px; letter-spacing: 5px; color: #fff; }
+.it2 .nm { font: 600 40px/1.2 'Plex Thai'; color: #fff; margin-top: 8px; white-space: nowrap; }
+.it2.hot { border-color: var(--red); }
+.it2.hot .lbl { color: var(--red); }
+.stp { position: absolute; left: 70px; width: 940px; height: 130px; background: var(--card); border: 2px solid var(--line); border-radius: 30px;
+  display: flex; align-items: center; gap: 26px; padding: 0 34px; opacity: 0; }
+.stp .n { width: 64px; height: 64px; flex: none; border-radius: 50%; border: 3px solid #fff; display: flex; align-items: center; justify-content: center;
+  font: 700 32px/1 'Poppins', 'Plex Thai'; color: #fff; }
+.stp .ic { width: 52px; height: 56px; flex: none; }
+.stp .tx { font: 600 42px/1.25 'Plex Thai', 'Poppins'; color: #fff; }
+.stp .tx .en { font-family: 'Poppins', 'Plex Thai'; }
+.stp.hot { border: 3px solid var(--red); }
+.stp.hot .n { border-color: var(--red); color: var(--red); }
+.chatc { left: 70px; top: 420px; width: 940px; height: 420px; padding: 30px 36px; display: flex; flex-direction: column; align-items: flex-end; gap: 22px; }
+.chatc .lbl { align-self: flex-start; color: var(--mute); }
+.ub { background: var(--card2); border: 2px solid var(--line); border-radius: 30px 30px 10px 30px; padding: 20px 30px;
+  font: 600 40px/1.3 'Plex Thai'; color: #fff; opacity: 0; }
+.ub .en { font-family: 'Poppins', 'Plex Thai'; }
+#m5 { position: absolute; right: 36px; top: 110px; border-color: rgba(255,255,255,.4); }
+.memc { left: 70px; top: 880px; width: 940px; height: 300px; padding: 30px 36px; border: 3px solid var(--red); }
+.memc .lbl { display: flex; align-items: center; gap: 14px; }
+.memc .lbl .ic { width: 40px; height: 40px; }
+.mi { display: inline-block; margin: 26px 20px 0 0; padding: 18px 28px; border-radius: 22px; border: 2px solid var(--line); background: var(--card2);
+  font: 600 40px/1.2 'Plex Thai'; color: #fff; opacity: 0; }
+.mi .en { font-family: 'Poppins', 'Plex Thai'; }
+
+/* ===== C2678 · 7 Values · Screen record ซิงค์ + หัว/ชิปด้านบน (3 สี) ===== */
+.stp.sm { height: 106px; border-radius: 26px; }
+.stp.sm .n { font-size: 26px; width: 58px; height: 58px; }
+.stp.sm .tx { font-size: 40px; }
+.scr { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; object-fit: cover; }
+.seg .scrhd .hd { top: 60px; }
+.scrrow { z-index: 2; }
+.scrrow .wrap { flex-wrap: nowrap; }
+.scrrow .wrap .pill { font-size: 34px; padding: 12px 24px; }
+.fin { position: absolute; left: 70px; top: 890px; width: 940px; height: 14px; transform-origin: left center;
+  background: repeating-linear-gradient(90deg, #fff 0 28px, #EA3A1F 28px 56px); border-radius: 7px; }

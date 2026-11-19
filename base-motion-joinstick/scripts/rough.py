@@ -8,16 +8,18 @@
                                           (ค่าเริ่มต้นข้ามพรีวิว: base-motion-joinstick ได้ MP4 พร้อมกราฟิกอยู่แล้ว · ประหยัด ~1–2 นาที)
   python work/rough.py full             → renders/cut_1080.mp4 (แท็กสี Rec.709 + keyframe ทุก 30 เฟรม พร้อมใช้เป็น talk.mp4)
                                           · renders/roughcut.srt (ซับตามเวลาหลังตัด) · work/edit_report.txt
-cuts.json: {"remove": [[id_จาก, id_ถึง, "เหตุผล"], ...], "keep_fillers": [id, ...], "start": id_แรก, "end": id_สุดท้าย}
+cuts.json: {"segments": [[id_จาก, id_ถึง], ...], "remove": [[id_จาก, id_ถึง, "เหตุผล"], ...], "keep_fillers": [id, ...],
+           "cut_times": [[วินาทีไฟล์ดิบ_จาก, ถึง, "เหตุผล"], ...], "keep_times": [[จาก, ถึง, "เหตุผล"]]  ← ขยายชิ้นที่ติดกันให้ครอบหัว/ท้ายคำจริง   ← ตัดระดับคำ (คำซ้ำกลางวลี · เดดแอร์จาก deadair.py) · ขอบหาจาก energy.py
 ตั้งค่าหลักอยู่ใน CFG ด้านล่าง (ปรับผ่าน work/cuts.json ช่อง "cfg" ได้)"""
 import json, os, re, shutil, subprocess, sys
 from xml.sax.saxutils import escape
 sys.stdout.reconfigure(encoding='utf-8')
 CFG = dict(
-    max_gap=0.40,      # เงียบเกินนี้ = ตัดทิ้ง (วินาที)
-    pad_in=0.06,       # เผื่อก่อนเริ่มคำ (กันตัดพยัญชนะต้น)
-    pad_out=0.14,      # เผื่อหลังจบคำ (กันตัดเสียงท้าย/ลมหายใจครึ่ง ๆ)
-    min_keep=0.30,     # ชิ้นที่สั้นกว่านี้หลังตัด = รวมกับชิ้นข้าง ๆ
+    max_gap=0.15,      # เงียบเกินนี้ = ตัดทิ้ง (วินาที) · 0.4/0.25 ผู้ใช้ติว่ายังมีเดดแอร์ (C2675 · C2676)
+    pad_in=0.04,       # เผื่อก่อนเริ่มคำ (กันตัดพยัญชนะต้น)
+    pad_out=0.08,      # เผื่อหลังจบคำ (กันตัดเสียงท้าย/ลมหายใจครึ่ง ๆ)
+    min_keep=0.20,     # ชิ้นที่สั้นกว่านี้หลังตัด = ทิ้ง (0.3 เคยทิ้งพยางค์ "แ" ของแน่นอน)
+    char_gap_cut=False, # ห้ามเปิด: ช่องว่างเวลาตัวอักษร Scribe ไม่ใช่ความเงียบจริง (เคยตัดคำ "ถาม" ทิ้ง) → ใช้ scripts/deadair.py
     seq_fps=30, width=1080, height=1920,
     cap_chars=28,      # ซับ: ตัวอักษรต่อบรรทัด (ทีมใช้ ~26 · สูงสุด 36)
     cap_max_dur=2.2,   # ซับ: ขึ้นนานสุดต่อบรรทัด
@@ -114,7 +116,59 @@ def build(keep_only=False):
             else:
                 R.append([s, e, p['id'], [p]])
             prev = p['id']
+    # ขยายชิ้นให้ครอบเสียงจริงที่ Scribe วางเวลาช้า (C2681: เสียง "1" อยู่ 181.04 แต่ Scribe บอก 181.26 → ชิ้นเริ่มช้า ตัดหัวคำ)
+    for a_, b_, why in C.get('keep_times', []):
+        for r in R:
+            if a_ <= r[1] + 0.05 and b_ >= r[0] - 0.05: r[0], r[1] = min(r[0], a_), max(r[1], b_); report.append(f"ขยายชิ้น   {a_:.2f}–{b_:.2f} · {why}"); break
+    # ตัดย่อยระดับตัวอักษร (คำซ้ำกลางวลี) + ช่องเงียบกลางวลีที่ยาวเกิน max_gap → แบ่งชิ้นตามเวลาไฟล์ดิบ
+    holes = [(a, b) for a, b, *_ in C.get('cut_times', [])]
+    for r in R:
+        for p in r[3]:
+            ch = [c for c in p.get('chars', []) if c[0].strip()]
+            for (t1, s1, e1), (t2, s2, e2) in zip(ch, ch[1:]):
+                if CFG.get('char_gap_cut') and s2 - e1 > CFG['max_gap'] and not any(a < s2 and b > e1 for a, b, *_ in C.get('cut_times', [])):   # มีจุดตัดมือแล้ว ใช้ของมือ
+                    holes.append((e1 + CFG['pad_out'], s2 - CFG['pad_in'])); report.append(f"ตัดเงียบกลางวลี #{p['id']} {e1:.2f}–{s2:.2f}")
+    for a, b in sorted(holes):
+        NR = []
+        for s, e, i, ps in R:
+            if b <= s or a >= e: NR.append([s, e, i, ps]); continue
+            if a > s: NR.append([s, a, i, [p for p in ps if p['start'] < a]])
+            if b < e: NR.append([b, e, i, [p for p in ps if p['end'] > b]])
+        R = NR
+    for a, b, why in C.get('cut_times', []): report.append(f"ตัดคำซ้ำ   {a:.2f}–{b:.2f} · {why}")
     R = [r for r in R if r[1] - r[0] >= CFG['min_keep']] or R
+    # เศษคำหลุดตรงจุดตัด (C2676 "ส…" · C2680–C2682 9 จุด): ขอบชิ้นที่ติดเนื้อหาที่ตัดทิ้ง ถ้ามีช่วงเงียบจริง ≥ 60 ms แล้วมีเสียงต่อจนสุดขอบ
+    # = ต้นคำ/ท้ายคำของส่วนที่ตัด → หดขอบเข้าไปกลางช่วงเงียบ (ปิดได้ด้วย cfg edge_fix: false) · joincheck.py ยังต้องรันตรวจซ้ำ
+    if CFG.get('edge_fix', True) and os.path.exists('work/audio.mp3'):
+        import struct as _st, math as _mt
+        _d = subprocess.run([FF, '-nostdin', '-v', 'error', '-i', 'work/audio.mp3', '-ac', '1', '-ar', '8000', '-f', 's16le', '-'], capture_output=True).stdout
+        _n = len(_d) // 2; _s = _st.unpack('<%dh' % _n, _d)
+        def _db(t):
+            seg = _s[int(t * 8000):int(t * 8000) + 160] or (0,)
+            return 20 * _mt.log10(_mt.sqrt(sum(x * x for x in seg) / len(seg)) / 32768 + 1e-9)
+        for k, r in enumerate(R):
+            prev_gap = k == 0 or abs(r[0] - R[k - 1][1]) > 0.3; next_gap = k + 1 == len(R) or abs(R[k + 1][0] - r[1]) > 0.3
+            if next_gap:   # ท้ายชิ้น: …เงียบ ≥60ms → เสียง (ต้นคำที่ตัด) ถึงขอบ
+                fr_ = [_db(r[1] - 0.02 * (i + 1)) for i in range(10)]          # จากขอบย้อนเข้าไป 200 ms
+                i = 0
+                while i < 10 and fr_[i] > -32: i += 1
+                j = i
+                while j < 10 and fr_[j] < -35: j += 1
+                if 0 < i <= 5 and j - i >= 3 and r[1] - r[0] > 0.4:
+                    nt = r[1] - 0.02 * (i + (j - i) / 2); report.append(f"หดท้ายชิ้น {r[1]:.2f}→{nt:.2f} (เศษคำถัดไปหลุด)"); r[1] = nt
+            if prev_gap and k:   # หัวชิ้น: เสียง (ท้ายคำที่ตัด) → เงียบ ≥60ms → คำจริง
+                fr_ = [_db(r[0] + 0.02 * i) for i in range(10)]
+                i = 0
+                while i < 10 and fr_[i] > -32: i += 1
+                j = i
+                while j < 10 and fr_[j] < -35: j += 1
+                if 0 < i <= 5 and j - i >= 3 and j < 10 and r[1] - r[0] > 0.4:
+                    nt = r[0] + 0.02 * (i + (j - i) / 2); report.append(f"หดหัวชิ้น {r[0]:.2f}→{nt:.2f} (เศษคำก่อนหน้าหลุด)"); r[0] = nt
+    # จุดตัดต้องตรงขอบเฟรมไฟล์ดิบ — ไม่งั้น trim ภาพปัดขึ้นเฟรมถัดไปแต่เสียงตัดตรงจุด → ปากไม่ตรงเสียงทุกจุดตัด (C2675)
+    _src = json.load(open('work/source.json', encoding='utf-8'))['src']
+    _n, _d = map(int, json.loads(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'json', _src],
+                                                capture_output=True, text=True).stdout)['streams'][0]['r_frame_rate'].split('/')); _fr = _n / _d
+    R = [[round(s * _fr) / _fr, round(e * _fr) / _fr, *rest] for s, e, *rest in R]
     for a, b, why in C.get('remove', []):
         report.append(f"ตัดในช่วง  #{a}–#{b} {P[a]['start']:.2f}–{P[b]['end']:.2f} · {why} · “{''.join(P[i]['text'] for i in range(a, b + 1))[:60]}”")
     for why in C.get('notes', []): report.append('หมายเหตุ   ' + why)
@@ -171,6 +225,9 @@ def build(keep_only=False):
     caps = merged
     for c in caps:                 # ไม้ยมก ๆ ต้องเว้นวรรคหน้า-หลังเสมอ (มากๆ → มาก ๆ) · ผู้ใช้สั่ง
         c['text'] = re.sub(r'\s*ๆ\s*', ' ๆ ', c['text']).strip()
+    for c in caps:                 # ไม่ขึ้นคำ เนาะ เนอะ ป่ะ อ่ะ · นะครับ → ครับ (ผู้ใช้สั่ง C2675/C2676 · ลบแค่ในซับ เสียงยังอยู่)
+        t = re.sub(r'\s*(เนาะ|เนอะ|ป่ะ|อ่ะ)', '', c['text']); t = re.sub(r'นะ(?=ครับ|ว่า|$)', '', t)
+        c['text'] = re.sub(r'\s+', ' ', t).strip() or c['text']
     for i, c in enumerate(caps):   # ต่อเวลาให้ติดกันถ้าห่างนิดเดียว (ไม่กะพริบ)
         if i + 1 < len(caps) and caps[i + 1]['start'] - c['end'] < 0.25: c['end'] = caps[i + 1]['start']
     # ซ่อมเวลากลับหัว: บรรทัดถัดไปเริ่มก่อนบรรทัดนี้ (เวลาตัวอักษร Scribe ไม่เรียง) → ลูปบนตั้ง end < start
@@ -263,7 +320,7 @@ def cut_video(src, R, vf, out, enc, post=''):
     fl = [f'[0:v]{vf},split={n}' + ''.join(f'[s{i}]' for i in range(n)), f'[0:a]asplit={n}' + ''.join(f'[t{i}]' for i in range(n))]
     for i, (s, e) in enumerate(R):
         fl.append(f'[s{i}]trim=start={s:.3f}:end={e:.3f},setpts=PTS-STARTPTS[v{i}]')
-        fl.append(f'[t{i}]atrim=start={s:.3f}:end={e:.3f},asetpts=PTS-STARTPTS[a{i}]')
+        fl.append(f'[t{i}]atrim=start={s:.3f}:end={e:.3f},asetpts=PTS-STARTPTS,afade=t=in:d=0.012,afade=t=out:st={max(0, e - s - 0.012):.3f}:d=0.012[a{i}]')   # เฟดสั้น ๆ ทุกจุดต่อ กันเสียงคลิก/กระตุก (ผู้ใช้: ต่อกันไม่สมูท)
     fl.append(''.join(f'[v{i}][a{i}]' for i in range(n)) + f'concat=n={n}:v=1:a=1[{"cv" if post else "ov"}][ca]')
     if post: fl.append(f'[cv]{post}[ov]')   # fps ต้องอยู่หลัง concat (ใส่ก่อน trim แล้วภาพเร็วกว่าเสียง ~2 เฟรม)
     subprocess.run([FF, '-nostdin', '-v', 'error', '-i', src, '-filter_complex', ';'.join(fl), '-map', '[ov]', '-map', '[ca]',

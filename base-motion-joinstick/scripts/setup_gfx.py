@@ -18,7 +18,7 @@ FF, FP = shutil.which('ffmpeg'), shutil.which('ffprobe')
 for d in ('assets', 'work', 'renders'): os.makedirs(os.path.join(G, d))
 for f in ('gen.py', 'style.css', 'package.json', 'hyperframes.json', 'AGENTS.md', 'CLAUDE.md'): shutil.copy(os.path.join(T, f), G)
 shutil.copytree(os.path.join(T, 'fonts'), os.path.join(G, 'fonts')); shutil.copytree(os.path.join(T, 'sfx'), os.path.join(G, 'assets/sfx'))
-shutil.copy(os.path.join(K, 'scripts/align.py'), os.path.join(G, 'work')); shutil.copy(srt, os.path.join(G, 'work/subs.srt'))
+shutil.copy(os.path.join(K, 'scripts/align.py'), os.path.join(G, 'work')); shutil.copy(os.path.join(K, 'scripts/caps2srt.py'), os.path.join(G, 'work')); shutil.copy(srt, os.path.join(G, 'work/subs.srt'))
 
 probe = lambda f, e: json.loads(subprocess.run([FP, '-v', 'error', '-select_streams', 'v:0', '-show_entries', e, '-of', 'json', f],
                                                capture_output=True, text=True).stdout)
