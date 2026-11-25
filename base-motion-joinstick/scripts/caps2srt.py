@@ -1,8 +1,8 @@
-# caps.json → subs.srt · ผู้ใช้สั่ง: ไม่ขึ้นคำ เนาะ เนอะ นะ ป่ะ อ่ะ · บรรทัด ≤ 30 ตัว (ห้ามย่อ)
+# caps.json → subs.srt · ผู้ใช้สั่ง: ไม่ขึ้นคำ เนาะ เนอะ นะ ป่ะ อ่ะ · S2 (25 พ.ย. 2026): + น่ะ เนี่ย เฮ้ย เอ่อ เออ · เนี้ย → นี้ · บรรทัด ≤ 30 ตัว (ห้ามย่อ)
 import json,re,sys
 c=json.load(open('work/caps.json'))
 def clean(t):
-    t=re.sub(r'(\s*)(เนาะ|เนอะ|ป่ะ|อ่ะ)', lambda m: ' ' if m.group(1) else '', t); t=re.sub(r'นะ(?=ครับ|ว่า|$)', '', t)
+    t=re.sub(r'เนี้ย', 'นี้', t); t=re.sub(r'(\s*)(เนาะ|เนอะ|ป่ะ|อ่ะ|น่ะ|เนี่ย|เฮ้ย|เอ่อ|เออ(?!ร))', lambda m: ' ' if m.group(1) else '', t); t=re.sub(r'นะ(?=ครับ|ว่า|$)', '', t)
     return re.sub(r'\s+',' ',t).strip()
 def f(t): return f"{int(t//3600):02d}:{int(t%3600//60):02d}:{t%60:06.3f}".replace('.',',')
 out=[]

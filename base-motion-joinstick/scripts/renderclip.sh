@@ -9,6 +9,7 @@ cd ..; OUT="renders/$2.mp4"
 $PY $K/finalize.py gfx/renders/draft.mp4 "$OUT" 2>&1 | tail -1
 cp gfx/work/subs.srt "renders/$2_subs.srt"
 $PY $K/check_final.py "$OUT" 2>&1 | grep -v "^NEAR" > work/check_final.txt; cat work/check_final.txt
+$PY $K/facecheck.py "$OUT" 2>&1 | tee -a work/check_final.txt   # S1 กราฟิกห้ามทับหัวคนพูด (ผู้ใช้สั่ง 25 พ.ย. 2026)
 ffmpeg -nostdin -v error -i "$OUT" -vf scale=720:1280 -c:v libx264 -preset fast -b:v 650k -maxrate 800k -bufsize 1500k -c:a aac -b:a 80k -movflags +faststart -y "renders/$2_preview.mp4"
 # ปกซูม (ครึ่งบนจอ ช่วงคำใหญ่) ไว้เช็คฟอนต์ไทย/CI ด้วยตา — ผู้ใช้สั่ง: ตรวจ CI ทุกครั้ง
 ffmpeg -nostdin -v error -ss 2.2 -i "$OUT" -frames:v 1 -vf "crop=1080:760:0:460" -y "renders/$2_ปก_ซูม.png"

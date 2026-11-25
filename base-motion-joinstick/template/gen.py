@@ -203,6 +203,33 @@ pop('c4', at('อ่อนแรง') - 0.6, 'thump', dy=80); fill("gg4", at('�
 tw(f"tl.to('#c1',{{opacity:0.4,duration:0.3}},{r(at('อ่อนแรง'))});")
 
 # ===== 5 · ซับ (IBM Plex Sans Thai ขาว เงาฟุ้ง) · ไม่ขึ้นช่วง Hook / Super / B-roll =====
+# S3 Transition (ผู้ใช้สั่ง 25 พ.ย. 2026): B-roll/insert เต็มจอ 2 อันห่างกัน < 3 วิ เดิมอันแรกเลื่อนออก อันใหม่เลื่อนเข้า → หน้าคนพูดแว็บตรงกลาง
+#   → อันแรกค้าง (ยืดวิดีโอวงกลมหน้า/อัดจอให้เล่นต่อ) อันใหม่เฟดทับ 0.3 วิ แล้วค่อยซ่อนอันแรก · ห่าง ≥ 3 วิ = ตั้งใจให้เห็นคนพูด ใช้ท่าเดิม
+def smooth_full(gap=3.0, d=0.3):
+    ent, ext = {}, {}
+    for i, s in enumerate(js):
+        m = re.match(r"tl\.fromTo\('#(g\d+|in\d+\w*)',\{opacity:[01],y:(?:1920|60)\}.*,([\d.]+)\);$", s)
+        if m: ent[m.group(1)] = (i, float(m.group(2))); continue
+        m = re.match(r"tl\.to\('#(g\d+|in\d+\w*)',\{(?:y:-1920|opacity:0),duration:0\.25,.*,([\d.]+)\);$", s)
+        if m: ext[m.group(1)] = (i, r(float(m.group(2)) + 0.25))
+    segs = sorted((ent[k][1], ext[k][1] if k in ext else TOTAL, k) for k in ent)
+    drop, z, n, end = set(), 21, 0, {}
+    for (a0, a1, A), (b0, b1, B) in zip(segs, segs[1:]):
+        if A not in ext or not -0.5 < b0 - a1 < gap: z = 21; continue
+        e = r(b0 + d); drop.add(ext[A][0]); n += 1; end[A] = e
+        js[ent[B][0]] = f"tl.fromTo('#{B}',{{opacity:0,y:0}},{{opacity:1,y:0,duration:{d},ease:'power1.out'}},{r(b0)});"
+        tw(f"tl.set('#{B}',{{zIndex:{z}}},{r(b0)});"); tw(f"tl.set('#{A}',{{opacity:0}},{e});"); z += 1
+        k = next(i for i, h in enumerate(html) if f'id="{A}"' in h)   # วิดีโอในอันแรก (วงกลมหน้า · อัดจอ) ที่จบตรง a1 → เล่นต่อถึง e
+        html[k] = re.sub(r'data-start="([\d.]+)" data-duration="([\d.]+)"', lambda m: m.group(0) if abs(float(m.group(1)) + float(m.group(2)) - a1) > 0.05
+                         else f'data-start="{m.group(1)}" data-duration="{r(e - float(m.group(1)))}"', html[k])
+        SEGS[:] = [(q, a, e) if f'id="cam{q}"' in html[k] and abs(b - a1) < 0.05 else (q, a, b) for q, a, b in SEGS]
+        HIDE_SUBS.append((a1, e))
+    js[:] = [s for i, s in enumerate(js) if i not in drop]
+    if n: print(f'S3 Transition: B-roll ติดกัน {n} จุด → เฟดทับ ไม่เห็นหน้าคนพูด')
+    # ช่วงเต็มจอ (ปก + B-roll/insert) → scripts/facecheck.py ข้ามช่วงนี้ (ตั้งใจทับหน้า) ตรวจ S1 เฉพาะช่วงที่เห็นคนพูด
+    hk = [h for h in HIDE_SUBS if h[0] == 0][:1]
+    json.dump(hk + [(a0, end.get(A, a1)) for a0, a1, A in segs], open('work/full.json', 'w'))
+smooth_full()
 FIX = [('ไว้โดยเอ่อ ', 'ไว้โดย '), ('Intrin-Intrinsic', 'Intrinsic'), ('Externalระดับสอง', 'External ระดับสอง'), ('Introjected,', 'Introjected')]
 caps = []
 def ts(x): h, m, s_ = x.replace(',', '.').split(':'); return int(h) * 3600 + int(m) * 60 + float(s_)

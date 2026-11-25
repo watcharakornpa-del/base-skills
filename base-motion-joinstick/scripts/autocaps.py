@@ -20,7 +20,7 @@ for t in toks:
     if t.isspace() and units: units[-1][1] = pos; continue
     units.append([a, pos])
 def clean(s):
-    s = re.sub(r'(\s*)(เนาะ|เนอะ|ป่ะ|อ่ะ)', lambda m: ' ' if m.group(1) else '', s); s = re.sub(r'นะ(?=ครับ|ว่า|$)', '', s)
+    s = re.sub(r'เนี้ย', 'นี้', s); s = re.sub(r'(\s*)(เนาะ|เนอะ|ป่ะ|อ่ะ|น่ะ|เนี่ย|เฮ้ย|เอ่อ|เออ(?!ร))', lambda m: ' ' if m.group(1) else '', s); s = re.sub(r'นะ(?=ครับ|ว่า|$)', '', s)
     s = re.sub(r'\s*ๆ\s*', ' ๆ ', s)
     return re.sub(r'\s+', ' ', s).strip()
 CONJ = ('ว่า', 'แล้ว', 'และ', 'หรือ', 'เพราะ', 'ที่', 'ก็', 'แต่', 'ถ้า', 'เพื่อ', 'คือ', 'โดย', 'ให้', 'เช่น', 'ซึ่ง', 'จะ', 'เวลา', 'อย่าง', 'จาก', 'ใน', 'กับ', 'ของ', 'เป็น')

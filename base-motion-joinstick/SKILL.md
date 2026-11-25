@@ -18,6 +18,7 @@ description: >
 > รวมสามสกิล: base-rough-cut (ตัด) + base-motion-collage v3 (โครง Hook/Super/B-roll) + base-motion (ฟอนต์/SFX)
 > **v3 (18 พ.ย. 2026)** หลัง AI Productivity C2675 (4 Draft) + C2676 (4 Draft): ตัดระดับคำ `cut_times` · เดดแอร์จากเสียงจริง · เฟดทุกจุดต่อ ·
 > ซับเขียนเองตามวลี + align แบบ fuzzy · ไม่มีซับใต้กล่องทุกแบบ · สคริปต์ตรวจ `repeats` `joincheck` `check_final` · บทเรียนเต็ม `~/Developer/video-use/LESSONS_ตัดต่อ-ซับ-เสียง.md`
+> **v5 (25 พ.ย. 2026)** รีวิว Skill Booster Lot 1: S1 facecheck · S2 คำสร้อย · S3 B-roll ติดกันเฟดทับ · เว้นหายใจ 0.24 วิ (ข้อ 15–18) · backup v4 ที่ `~/.claude/skill-backups/base-motion-joinstick-20261125`
 > **v4 (19 พ.ย. 2026)** หลังทำ AI Productivity คลิป 4–12 ในรอบเดียว: โหมดหลายคลิป + Screen record ซิงค์ (หัวข้อ "⚡ โหมดหลายคลิป" ด้านล่าง) ·
 > ร่างซับอัตโนมัติ `autocaps.py` + แก้บรรทัด `capfix.py` · ประกอบ/เรนเดอร์ด้วย `buildclip.sh` `renderclip.sh` `runqueue.sh` · backup v3 ที่ `~/.claude/skill-backups/base-motion-joinstick-20261119`
 
@@ -46,7 +47,15 @@ description: >
     · ตรวจอัตโนมัติ `python3 $K/scripts/cicheck.py <โปรเจกต์>` = ฟอนต์ + สี (ดำ/ขาว/แดงเท่านั้น) + ห้ามไล่สี + ห้าม glow · buildclip/renderclip หยุดถ้าไม่ผ่าน · check_final ข้อ 8
     · **แล้วดูด้วยตาทุกครั้ง:** เปิด `renders/<ชื่อ>_ปก_ซูม.png` (renderclip ทำให้) ซูมปกทุกคลิป + เฟรมที่มีป้าย/ชิปภาษาไทย — สคริปต์จับได้แค่ CSS ไม่เห็นภาพจริง
 
-**ก่อนบอก "เสร็จ"** → `check_final.py <ไฟล์ส่ง>` ผ่านข้อ 1–6 + 8 (CI) + อ่าน ADJ/NEAR + ดึงเฟรมจาก MP4 ทุกฉาก (ภาพนิ่ง snapshot ไม่นับ) + **ซูมปกเช็คฟอนต์ CI ทีละคลิป**
+**Skill Booster รีวิว Lot 1 (25 พ.ย. 2026 · พี่ Mac อนุมัติ · ใช้กับทุกคลิป)**
+15. **S1 กราฟิกห้ามทับหน้า/หัวคนพูด** (Super การ์ด ซับ insert) และของสำคัญในฉาก → ตั้ง `HEAD_BOX = 'x0:y0:x1:y1'` ใต้ FACE_CROP ใน gfx/gen.py จาก contact sheet ขั้น 4 ·
+    `facecheck.py` (renderclip รันให้) เทียบไฟล์ส่งกับ talk.mp4 ในกรอบหัว ข้ามช่วงปก/B-roll เต็มจอ · ⛔ = ขยับ Super/การ์ดออกจากหัวแล้วเรนเดอร์ใหม่
+16. **S2 คำสร้อยไม่ขึ้นซับ** เพิ่ม น่ะ เนี่ย เฮ้ย เอ่อ เออ · **เนี้ย → นี้** (caps2srt/capfix/autocaps แก้แล้ว) · Scribe อาจเขียนวรรณยุกต์ผิด เทียบบทในชีตตอนอ่านซับ
+17. **S3 B-roll ติดกันห้ามเห็นคนพูดแว็บ** → gen.py `smooth_full()`: ห่าง < 3 วิ อันแรกค้าง อันใหม่เฟดทับ 0.3 วิ (ยืดวงกลมหน้า/อัดจอให้เล่นต่อ) · ห่าง ≥ 3 วิ ใช้ท่าเดิม
+    · โปรเจกต์ที่ตั้งก่อน 25 พ.ย. ไม่มีโค้ดนี้ใน gfx/gen.py → ก๊อปบล็อก `# S3 Transition` ถึง `smooth_full()` จาก template/gen.py ไปวางก่อน `FIX = [`
+18. **เว้นหายใจตรงจุดตัดเงียบ** ฟีดแบ็ค "ตัดฉับ ๆ หายใจไม่ทัน" → deadair.py เหลือเงียบ 0.24 วิ (เดิม 0.12)
+
+**ก่อนบอก "เสร็จ"** → `check_final.py <ไฟล์ส่ง>` ผ่านข้อ 1–6 + 8 (CI) + facecheck (S1) + อ่าน ADJ/NEAR + ดึงเฟรมจาก MP4 ทุกฉาก (ภาพนิ่ง snapshot ไม่นับ) + **ซูมปกเช็คฟอนต์ CI ทีละคลิป**
 
 ## ⚡ โหมดหลายคลิป + Screen record (v4 · ใช้กับชุดที่มีสคริปต์ชีต + `Insert footage` อัดจอ)
 ```bash

@@ -2,10 +2,11 @@
 """เดดแอร์จากเสียงจริง → เพิ่มลง work/cuts.json "cut_times" (ลบของรอบก่อนที่ขึ้นต้น "เดดแอร์" ก่อน)
 ใช้ (จากโฟลเดอร์โปรเจกต์ มี work/rough.py): python deadair.py  แล้ว rough.py build อีกรอบ (สคริปต์ build ให้เองหนึ่งรอบก่อนคำนวณ)
 ค่าที่ผู้ใช้ผ่าน (C2676): เงียบ < −32 dB นาน ≥ 0.15 วิ ในช่วงที่เก็บ → เหลือ 0.12 วิ (0.06 หัว/ท้าย)
+Lot 2 SJAI (25 พ.ย. 2026 ฟีดแบ็ค Lot 1 "ตัดฉับ ๆ หายใจไม่ทัน"): เหลือ 0.24 วิ (0.12 หัว/ท้าย) · ยังต่ำกว่าเกณฑ์เดดแอร์ 0.3 วิของ check_final
 ห้ามใช้ช่องว่างเวลาตัวอักษรของ Scribe แทน (ไม่ใช่ความเงียบจริง เคยตัดคำทิ้ง)"""
 import json, re, shutil, subprocess, sys
 sys.stdout.reconfigure(encoding='utf-8')
-TH, D, LEAVE = -32, 0.15, 0.06
+TH, D, LEAVE = -32, 0.15, 0.12
 C = json.load(open('work/cuts.json', encoding='utf-8'))
 # ลบเดดแอร์รอบก่อน แล้ว build ใหม่ก่อนคำนวณ — ไม่งั้น keep.json ยังมีรูจากรอบเก่า ช่วงเงียบที่รอบเก่าตัดจะไม่ถูกเพิ่มกลับ (C2675 Draft 5 เหลือเงียบ 0.54 วิ)
 C['cut_times'] = [c for c in C.get('cut_times', []) if not c[2].startswith('เดดแอร์')]
@@ -30,6 +31,6 @@ n = 0
 for a, b in zip(st, en):
     for s, e in K:
         for lo, hi in free(max(a, s), min(b, e)):
-            if hi - lo > D: C['cut_times'].append([round(lo + LEAVE, 2), round(hi - LEAVE, 2), f'เดดแอร์ {hi - lo:.2f} วิ ({TH} dB)']); n += 1
+            if hi - lo > max(D, 2 * LEAVE + 0.04): C['cut_times'].append([round(lo + LEAVE, 2), round(hi - LEAVE, 2), f'เดดแอร์ {hi - lo:.2f} วิ ({TH} dB)']); n += 1
 json.dump(C, open('work/cuts.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print(f'เดดแอร์ {n} จุด → work/cuts.json · รัน rough.py build อีกรอบ')

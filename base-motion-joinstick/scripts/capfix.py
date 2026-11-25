@@ -14,7 +14,7 @@ for ln in open(S, encoding='utf-8'):
     reps.append((a, b, new))
 for a, b, new in sorted(reps, reverse=True): L[a-1:b] = new
 def clean(t):
-    t = re.sub(r'(\s*)(เนาะ|เนอะ|ป่ะ|อ่ะ)', lambda m: ' ' if m.group(1) else '', t); t = re.sub(r'นะ(?=ครับ|ว่า|$)', '', t); t = re.sub(r'\s*ๆ\s*', ' ๆ ', t)
+    t = re.sub(r'เนี้ย', 'นี้', t); t = re.sub(r'(\s*)(เนาะ|เนอะ|ป่ะ|อ่ะ|น่ะ|เนี่ย|เฮ้ย|เอ่อ|เออ(?!ร))', lambda m: ' ' if m.group(1) else '', t); t = re.sub(r'นะ(?=ครับ|ว่า|$)', '', t); t = re.sub(r'\s*ๆ\s*', ' ๆ ', t)
     return re.sub(r'\s+', ' ', t).strip()
 for x in L:
     if len(clean(x)) > 30: print('⚠️ เกิน 30:', x)
